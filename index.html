@@ -1,94 +1,16 @@
 <!doctype html>
-<html lang="en" class="gate-locked">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Immortal — Key Portal</title>
-<meta name="robots" content="noindex, nofollow, noarchive, nosnippet">
-<meta name="referrer" content="no-referrer">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:* https:; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
-<meta http-equiv="X-Content-Type-Options" content="nosniff">
-<link rel="stylesheet" href="styles.css">
-<script src="config.js"></script>
-<script src="gate.js"></script>
+<title>Immortal Admin</title>
+<meta http-equiv="refresh" content="0; url=admin/">
+<script>
+  location.replace(new URL('admin/', location.href).href);
+</script>
 </head>
-<body>
-  <div id="site-gate" class="gate">
-    <div class="gate-card">
-      <img class="gate-logo" src="logo2.png" alt="" width="48" height="48" draggable="false" onerror="this.style.display='none'" />
-      <p class="gate-brand">IMMORTAL</p>
-      <p class="gate-sub">KEY PORTAL · ACCESS LOCKED</p>
-      <input id="gate-pass" type="password" autocomplete="current-password" placeholder="Web access pass" />
-      <button type="button" id="gate-go" class="btn">UNLOCK</button>
-      <p id="gate-err" class="gate-err"></p>
-    </div>
-  </div>
-
-  <div id="portal-app" class="app" hidden>
-    <header class="top">
-      <div class="top-brand">
-        <img class="top-logo" src="logo2.png" alt="" width="36" height="36" draggable="false" onerror="this.style.display='none'" />
-        <div>
-          <p class="brand">IMMORTAL</p>
-          <p class="tag">Key forge · private GEN KEY</p>
-        </div>
-      </div>
-      <div class="top-links">
-        <a id="link-loader" href="#">Open Loader</a>
-        <a id="link-admin" href="#">Admin</a>
-      </div>
-    </header>
-
-    <section class="panel">
-      <h1>GEN KEY</h1>
-      <p class="hint">Login to the Immortal API, pick product/plan, generate keys, paste into ImmortalLoader.exe.</p>
-
-      <div class="row">
-        <label>Admin user
-          <input id="admin-user" autocomplete="username" placeholder="Username" />
-        </label>
-        <label>Admin password
-          <input id="admin-pass" type="password" autocomplete="current-password" placeholder="Password" />
-        </label>
-        <button type="button" id="btn-login" class="btn">LOGIN API</button>
-      </div>
-      <p id="login-status" class="status">API: idle</p>
-
-      <div class="row gen-row">
-        <label>Product
-          <select id="product-id" disabled>
-            <option value="">Login first…</option>
-          </select>
-        </label>
-        <label>Plan
-          <select id="plan-id" disabled>
-            <option value="">Select product…</option>
-          </select>
-        </label>
-        <label>Qty
-          <input id="qty" type="number" min="1" max="50" value="1" />
-        </label>
-        <label>Days (optional)
-          <input id="days" type="number" min="0" max="3650" value="0" title="0 = use plan default" />
-        </label>
-        <button type="button" id="btn-gen" class="btn btn-accent" disabled>GEN KEY</button>
-      </div>
-
-      <div id="keys-out" class="keys"></div>
-    </section>
-
-    <section class="panel">
-      <h1>LOADER FLOW</h1>
-      <ol class="steps">
-        <li>Run <code>backend</code> API on :3000</li>
-        <li>GEN KEY here (click a key to copy)</li>
-        <li>Open ImmortalLoader.exe → paste key → AUTHENTICATE</li>
-      </ol>
-      <button type="button" id="btn-open-loader" class="btn">OPEN LOADER UI</button>
-    </section>
-  </div>
-
-  <script src="unlock.js"></script>
-  <script src="app.js"></script>
+<body style="background:#0b0b10;color:#cfc8ff;font-family:sans-serif;padding:40px;text-align:center">
+  <p>Opening admin…</p>
+  <p><a href="admin/" style="color:#a78bfa">Continue to login</a></p>
 </body>
 </html>
