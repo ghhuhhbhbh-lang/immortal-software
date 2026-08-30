@@ -2,6 +2,7 @@
 //  Immortal Software — Security Integration Shim v2.1
 // ============================================================
 #include "Security.h"
+#include "ImmortalSecurity.h"
 #include <string>
 
 namespace ImmortalSecurity {

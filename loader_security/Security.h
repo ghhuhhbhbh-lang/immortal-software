@@ -22,9 +22,7 @@
 #endif
 
 #ifdef RELEASE_BUILD
-#  pragma comment(linker, "/GUARD:CF")
-#  pragma comment(linker, "/DYNAMICBASE")
-#  pragma comment(linker, "/HIGHENTROPYVA")
+  // Prefer project-level /GUARD:CF /DYNAMICBASE — avoid per-TU #pragma comment(linker).
 #  pragma optimize("gs", on)
 #endif
 

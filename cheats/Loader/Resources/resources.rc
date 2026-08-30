@@ -1,0 +1,13 @@
+// Loader/Resources/resources.rc
+// CheatDLL.dll is embedded as RCDATA resource 100.
+// The Loader post-build step copies bin\Release\CheatDLL.dll here.
+
+#include <windows.h>
+
+#define IDI_APPICON 101
+IDI_APPICON ICON "logo.ico"
+
+// Embed CheatDLL.dll as RCDATA resource 100.
+// Build CheatDLL first, then Loader.
+100 RCDATA "CheatDLL.dll"
+

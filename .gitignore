@@ -10,13 +10,50 @@ Thumbs.db
 .idea/
 *.suo
 *.user
+*.userosscache
+*.sln.docstates
 
-# VS build artifacts
-pablo/**/.vs/
-pablo/**/bin/
-pablo/**/obj/
-pablo/**/*.user
-pablo/**/*.suo
-pablo/**/*.db
-pablo/**/*.VC.db
-pablo/**/*.opendb
+# VS / MSVC build artifacts (anywhere)
+.vs/
+**/x64/Release/
+**/x64/Debug/
+**/Win32/Release/
+**/Win32/Debug/
+*.obj
+*.pdb
+*.ilk
+*.exp
+*.iobj
+*.ipdb
+*.tlog
+*.lastbuildstate
+*.recipe
+*.FileListAbsolute.txt
+*.VC.db
+*.opendb
+*.aps
+
+# Local native build trees / binaries
+dist/
+Emulator Loader GUI/host/packages/
+Emulator Loader GUI/host/x64/
+CMakeCache.txt
+CMakeFiles/
+
+# Cheats / Loader build outputs (keep sources only)
+cheats/bin/
+cheats/**/obj/
+cheats/**/packages/
+cheats/Loader/nuget.exe
+cheats/Loader/Resources/CheatDLL.dll
+cheats/Loader/Resources/~*.dll
+
+# Claude local worktrees / caches
+.claude/
+
+# Packed release bundles
+*.nupkg
+
+# OS / tooling
+*.tmp
+*.temp

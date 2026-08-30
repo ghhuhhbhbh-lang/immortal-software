@@ -5,10 +5,17 @@
 function apiBase() {
   return window.IMMORTAL_API || 'http://127.0.0.1:3000';
 }
-const IMMORTAL_PORTAL = window.IMMORTAL_PORTAL || '../dashboard/index.html';
+const IMMORTAL_PORTAL = window.IMMORTAL_PORTAL || '../portal/index.html';
 document.addEventListener('DOMContentLoaded', () => {
-  const portal = document.getElementById('portal-link');
-  if (portal) portal.href = IMMORTAL_PORTAL;
+  document.querySelectorAll('.portal-link').forEach((portal) => {
+    portal.href = IMMORTAL_PORTAL;
+    portal.addEventListener('click', (e) => {
+      if (window.IMMORTAL_IS_WEBVIEW && window.chrome && window.chrome.webview) {
+        e.preventDefault();
+        nativeSend({ action: 'openPortal' });
+      }
+    });
+  });
   paintApiBadge();
   probeApiHealth();
 });
@@ -35,12 +42,28 @@ function paintApiBadge(state, detail) {
   el.textContent = detail || (state === 'ok' ? 'API ONLINE' : state === 'down' ? 'API OFFLINE' : 'API …');
 }
 
+function paintHostBadge(state, detail) {
+  let el = document.getElementById('host-badge');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'host-badge';
+    el.className = 'host-badge';
+    document.body.appendChild(el);
+  }
+  el.dataset.state = state || 'pending';
+  el.textContent = detail || (state === 'ok' ? 'HOST ONLINE' : state === 'browser' ? 'BROWSER' : 'HOST …');
+}
+
 async function probeApiHealth() {
   paintApiBadge('pending', 'API …');
   try {
     const res = await apiFetch('/health', {}, 4000);
-    if (!res.ok) throw new Error('bad');
     const data = await res.json().catch(() => ({}));
+    if (data.status === 'degraded' || data.db === 'down') {
+      paintApiBadge('pending', data.version ? `API ${data.version} · DB?` : 'API DEGRADED');
+      return false;
+    }
+    if (!res.ok) throw new Error('bad');
     paintApiBadge('ok', data.version ? `API ${data.version}` : 'API ONLINE');
     return true;
   } catch (_) {
@@ -160,8 +183,12 @@ function stopClientHeartbeat() {
 
 // ── 1. Native WebView2 bridge ─────────────────────────────────────────────────
 const isNative = !!(window.chrome && window.chrome.webview);
+let g_activeAction = '';
+let g_hostOnline = false;
+let g_loadWatch = null;
 document.body.classList.remove('is-webview-pending');
 document.body.classList.add(isNative ? 'is-webview' : 'is-browser');
+paintHostBadge(isNative ? 'pending' : 'browser', isNative ? 'HOST …' : 'BROWSER');
 
 function nativeSend(obj) {
   if (!isNative || !obj) return;
@@ -177,6 +204,21 @@ function parseHostMessage(raw) {
   try { return JSON.parse(raw); } catch (_) { return null; }
 }
 
+function clearLoadWatch() {
+  if (g_loadWatch) {
+    clearTimeout(g_loadWatch);
+    g_loadWatch = null;
+  }
+}
+
+function armLoadWatch(ms) {
+  clearLoadWatch();
+  g_loadWatch = setTimeout(() => {
+    g_loadWatch = null;
+    onLoadError({ error: 'Host timed out — check WebView bridge' });
+  }, ms || 12000);
+}
+
 function bindWebViewBridge() {
   if (!isNative) return;
   const wv = window.chrome.webview;
@@ -184,19 +226,30 @@ function bindWebViewBridge() {
     const msg = parseHostMessage(ev.data);
     if (msg && msg.action) window.handleNativeMessage(msg);
   });
-  // Some hosts deliver via document — keep both
   window.addEventListener('message', (ev) => {
     if (!ev || ev.source !== window) return;
     const msg = parseHostMessage(ev.data);
     if (msg && msg.action) window.handleNativeMessage(msg);
   });
-  nativeSend({ action: 'uiReady', version: '2.2' });
+  nativeSend({ action: 'uiReady', version: '2.3' });
+  nativeSend({ action: 'ping' });
+  setTimeout(() => {
+    if (!g_hostOnline) paintHostBadge('pending', 'HOST WAIT');
+  }, 2500);
 }
 
 // C++ → JS entry point (also callable from injected host scripts)
 window.handleNativeMessage = function (msg) {
   if (!msg || !msg.action) return;
   switch (msg.action) {
+    case 'hostReady':
+      g_hostOnline = true;
+      paintHostBadge('ok', msg.version ? `HOST ${msg.version}` : 'HOST ONLINE');
+      break;
+    case 'pong':
+      g_hostOnline = true;
+      paintHostBadge('ok', 'HOST ONLINE');
+      break;
     case 'prefillKey':
       {
         const el = document.getElementById('key-input');
@@ -219,13 +272,19 @@ window.handleNativeMessage = function (msg) {
     case 'authFail':      onAuthFail(msg);       break;
     case 'gameStatus':    onGameStatus(msg);     break;
     case 'loadProgress':  onLoadProgress(msg);   break;
-    case 'loadDone':      onLoadDone();          break;
+    case 'loadDone':      onLoadDone(msg);       break;
     case 'loadError':     onLoadError(msg);      break;
     case 'spoofProgress': onLoadProgress(msg);   break;
-    case 'spoofDone':     msg.success ? onLoadDone() : onLoadError(msg); break;
+    case 'spoofDone':     msg.success ? onLoadDone(msg) : onLoadError(msg); break;
     case 'hotkeySet':     onHotkeySet(msg);      break;
     case 'emuActive':     onEmuActive(msg);      break;
     case 'emuLog':        onEmuLog(msg);         break;
+    case 'sessionRevoked':
+      Tokens.clear();
+      stopClientHeartbeat();
+      showScreen('login');
+      paintHostBadge('pending', 'SESSION LOST');
+      break;
   }
 };
 
@@ -949,15 +1008,16 @@ function onGameStatus(msg) {
   const text   = document.getElementById('game-text');
   const badge  = document.getElementById('load-badge');
   const card   = document.getElementById('load-card');
+  const detail = (msg.detail && String(msg.detail)) || '';
 
   if (gameReady) {
     dot && dot.classList.add('ready');
-    if (text) text.textContent = 'Game ready';
+    if (text) text.textContent = detail || 'Channel ready';
     if (badge) { badge.textContent = 'READY'; badge.classList.add('ready'); }
     card && card.classList.add('game-ready');
   } else {
     dot && dot.classList.remove('ready');
-    if (text) text.textContent = 'Waiting for game...';
+    if (text) text.textContent = detail || 'Waiting for host…';
     if (badge) { badge.textContent = 'WAITING'; badge.classList.remove('ready'); }
     card && card.classList.remove('game-ready');
   }
@@ -994,25 +1054,29 @@ function finishLoadBar(success) {
 function onLoadProgress(msg) {
   const el = document.getElementById('loading-msg');
   if (el) el.textContent = msg.msg || 'Working...';
+  armLoadWatch(12000);
 }
-function onLoadDone() {
+function onLoadDone(msg) {
+  clearLoadWatch();
   finishLoadBar(true);
+  const note = (msg && msg.msg) ? String(msg.msg) : '';
   setTimeout(() => {
     if (g_activeAction === 'loadSpoofer') {
       showResultSpooferSuccess();
     } else {
-      showResultSuccess();
+      showResultSuccess(note);
     }
   }, 500);
 }
 function onLoadError(msg) {
+  clearLoadWatch();
   finishLoadBar(false);
   setTimeout(() => {
-    showResultError(msg.error || 'Injection failed');
+    showResultError(msg.error || msg.msg || 'Load failed');
   }, 400);
 }
 
-function showResultSuccess() {
+function showResultSuccess(note) {
   const mark  = document.getElementById('result-mark');
   const icon  = document.getElementById('result-icon');
   const title = document.getElementById('result-title');
@@ -1020,9 +1084,9 @@ function showResultSuccess() {
   const rmsg2 = document.getElementById('result-msg2');
   mark.className = 'result-mark success';
   icon.innerHTML = '<polyline points="8,24 20,36 40,14" stroke="#e9e9ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
-  title.textContent = 'INJECTED';
-  rmsg.textContent  = 'Private module loaded successfully.';
-  if (rmsg2) rmsg2.textContent = '';
+  title.textContent = 'READY';
+  rmsg.textContent  = note || 'Loader pipeline finished.';
+  if (rmsg2) rmsg2.textContent = isNative ? 'WebView host acknowledged the hand-off.' : 'Browser preview mode.';
   showScreen('result');
 }
 function showResultSpooferSuccess() {
@@ -1099,17 +1163,50 @@ document.getElementById('exit-card').addEventListener('click', () => {
   nativeSend({ action: 'exit' });
 });
 
-// LAUNCH PRIVATE card
-document.getElementById('load-card').addEventListener('click', () => {
+function selectedGame() {
+  const sel = document.getElementById('game-select');
+  return (sel && sel.value) || 'cs2';
+}
+
+function beginPrivateLoad(reason) {
   g_activeAction = 'load_private';
   document.getElementById('loading-title').textContent = 'LOADING PRIVATE';
-  document.getElementById('loading-msg').textContent = 'Preparing...';
+  document.getElementById('loading-msg').textContent = 'Preparing ' + selectedGame().toUpperCase() + '…';
   document.getElementById('loading-bar').style.width = '0%';
   document.getElementById('loading-bar').style.background = '';
-  document.getElementById('loading-bar').style.boxShadow  = '';
+  document.getElementById('loading-bar').style.boxShadow = '';
   showScreen('loading');
   startLoadBar();
-  nativeSend({ action: 'load_private' });
+  armLoadWatch(14000);
+  nativeSend({
+    action: 'load_private',
+    game: selectedGame(),
+    reason: reason || 'start',
+  });
+  // Browser / Edge app-mode without full host: finish the UI pipeline locally.
+  if (!isNative) {
+    setTimeout(() => onLoadProgress({ msg: 'Binding session…' }), 200);
+    setTimeout(() => onLoadProgress({ msg: 'Checking license channel…' }), 700);
+    setTimeout(() => onLoadDone({ msg: 'Browser preview complete' }), 1400);
+  }
+}
+
+const startBtn = document.getElementById('start-btn');
+if (startBtn) {
+  startBtn.addEventListener('click', () => {
+    if (!Tokens.access()) {
+      const hint = document.getElementById('start-hint');
+      if (hint) hint.textContent = 'Authenticate with a license key first';
+      showScreen('login');
+      return;
+    }
+    beginPrivateLoad('start_btn');
+  });
+}
+
+// LAUNCH PRIVATE card
+document.getElementById('load-card').addEventListener('click', () => {
+  beginPrivateLoad('load_card');
 });
 
 document.getElementById('spoof-card').addEventListener('click', () => {
@@ -1121,11 +1218,15 @@ document.getElementById('spoof-card').addEventListener('click', () => {
   document.getElementById('loading-bar').style.boxShadow  = '';
   showScreen('loading');
   startLoadBar();
+  armLoadWatch(14000);
   nativeSend({ action: 'loadSpoofer' });
+  if (!isNative) {
+    setTimeout(() => onLoadProgress({ msg: 'Refreshing identity envelope…' }), 400);
+    setTimeout(() => onLoadDone({ msg: 'Browser spoof preview' }), 1200);
+  }
 });
 
 // ── LAUNCH EMU card + console ───────────────────────────────────────────────
-let g_activeAction = '';
 let emuActive = false;
 
 const emuConsole = document.getElementById('emu-console');
@@ -1146,7 +1247,7 @@ document.getElementById('emu-card').addEventListener('click', () => {
   if (ecLog) ecLog.innerHTML = '';
   if (emuConsole) emuConsole.classList.add('open');
   setEmuStatusText('STARTING…', 'armed');
-  nativeSend({ action: 'blueballsofmonkeyniger' });
+  nativeSend({ action: 'emuStart' });
 });
 
 const ecVerify = document.getElementById('ec-verify');

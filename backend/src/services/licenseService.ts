@@ -2,20 +2,42 @@ import { prisma } from '../db'
 import { generateLicenseKey, hashLicenseKey, verifyLicenseKey } from '../utils/crypto'
 import { AppError } from '../utils/errors'
 
+export type CreatedLicense = {
+  id: string
+  key: string
+  keyPrefix: string
+  productId: string
+  planId: string
+  expiresAt: Date | null
+}
+
 export async function createLicenses(opts: {
   productId: string
   planId: string
   quantity: number
-  durationDays: number
+  durationDays?: number | null
+  deviceLimit?: number
   createdById: string
-}): Promise<string[]> {
-  const keys: string[] = []
+}): Promise<CreatedLicense[]> {
+  const product = await prisma.product.findUnique({ where: { id: opts.productId } })
+  if (!product || !product.active) throw new AppError(404, 'Product not found')
+
+  const plan = await prisma.plan.findFirst({
+    where: { id: opts.planId, productId: opts.productId, active: true },
+  })
+  if (!plan) throw new AppError(404, 'Plan not found for this product')
+
+  const days = opts.durationDays && opts.durationDays > 0 ? opts.durationDays : plan.durationDays
+  const deviceLimit = opts.deviceLimit ?? plan.deviceLimit ?? product.deviceLimit ?? 1
+  const created: CreatedLicense[] = []
+
   for (let i = 0; i < opts.quantity; i++) {
     const key = generateLicenseKey()
     const keyHash = await hashLicenseKey(key)
-    const keyPrefix = key.slice(0, 4)
-    const expiresAt = new Date(Date.now() + opts.durationDays * 86400000)
-    await prisma.license.create({
+    const keyPrefix = key.replace(/-/g, '').slice(0, 4).toUpperCase()
+    const expiresAt = new Date(Date.now() + days * 86400000)
+
+    const row = await prisma.license.create({
       data: {
         keyHash,
         keyPrefix,
@@ -23,15 +45,26 @@ export async function createLicenses(opts: {
         planId: opts.planId,
         expiresAt,
         createdById: opts.createdById,
+        deviceLimit,
       },
     })
-    keys.push(key)
+
+    created.push({
+      id: row.id,
+      key,
+      keyPrefix: row.keyPrefix,
+      productId: row.productId,
+      planId: row.planId,
+      expiresAt: row.expiresAt,
+    })
   }
-  return keys
+
+  return created
 }
 
 export async function findLicenseByKey(rawKey: string) {
-  const prefix = rawKey.replace(/-/g, '').slice(0, 4).toUpperCase()
+  const cleaned = rawKey.replace(/-/g, '').toUpperCase()
+  const prefix = cleaned.slice(0, 4)
   const candidates = await prisma.license.findMany({
     where: { keyPrefix: prefix },
     include: { product: true, plan: true },

@@ -11,13 +11,17 @@
 <div class="sec-scan" aria-hidden="true"></div>
 <div class="sec-vignette" aria-hidden="true"></div>
 <header class="sec-rail sec-rail-top">
-  <span>IMMORTAL // CLASSIFIED</span>
+  <span class="sec-brand">
+    <img class="sec-logo" src="logo2.png" alt="" draggable="false" width="18" height="18"
+         onerror="this.style.display='none'" />
+    <span class="sec-brand-text">IMMORTAL // CLASSIFIED</span>
+  </span>
   <span class="sec-live"><i></i> CHANNEL LIVE</span>
-  <span>AES-256 · TLS 1.3</span>
+  <span class="sec-meta">AES-256 · TLS 1.3</span>
 </header>
 <footer class="sec-rail sec-rail-bot">
   <span>UNAUTHORIZED ACCESS PROHIBITED</span>
-  <span>SESSION HARDENED</span>
+  <span class="sec-meta">SESSION HARDENED</span>
 </footer>
 <div class="sec-corners" aria-hidden="true"></div>
 
@@ -113,7 +117,7 @@
       </button>
       <p class="auth-error" id="auth-error"></p>
       <p class="auth-footer">Immortal Software &mdash; Protected by military-grade encryption</p>
-      <a class="portal-link" href="../dashboard/index.html" style="display:inline-block;margin-top:16px">KEY PORTAL</a>
+      <a class="portal-link" id="login-portal-link" href="../portal/index.html" style="display:inline-block;margin-top:16px">KEY PORTAL</a>
     </div>
   </div>
 
@@ -126,11 +130,26 @@
       </svg>
     </button>
     <header class="main-header">
-      <span class="main-wordmark">IMMORTAL SOFTWARE</span>
-      <a class="portal-link" id="portal-link" href="../dashboard/index.html" target="_blank" rel="noopener">KEY PORTAL</a>
+      <div class="main-brand">
+        <img class="main-logo" src="logo2.png" alt="" draggable="false" width="28" height="28"
+             onerror="this.style.display='none'" />
+        <span class="main-wordmark">IMMORTAL SOFTWARE</span>
+      </div>
+      <a class="portal-link" id="portal-link" href="../portal/index.html" target="_blank" rel="noopener">KEY PORTAL</a>
       <span class="main-user" id="main-user"></span>
     </header>
     <div class="main-body">
+      <div class="start-dock" id="start-dock">
+        <label class="start-label" for="game-select">GAME</label>
+        <select id="game-select" class="game-select" aria-label="Select game">
+          <option value="cs2">Counter-Strike 2</option>
+          <option value="fortnite">Fortnite</option>
+          <option value="valorant">Valorant</option>
+          <option value="custom">Custom / Manual</option>
+        </select>
+        <button type="button" id="start-btn" class="btn-primary start-btn">START</button>
+        <p class="start-hint" id="start-hint">Auth → pick game → START runs the WebView load pipeline</p>
+      </div>
       <div class="cards" id="main-cards">
 
         <div class="card card-exit" id="exit-card">
@@ -166,7 +185,7 @@
             <div class="card-icon-ring"></div>
           </div>
           <p class="card-label">LAUNCH PRIVATE</p>
-          <p class="card-caption">INJECT MODULE</p>
+          <p class="card-caption">LOAD PIPELINE</p>
           <div class="card-seals"><span>SECURE</span><span>BOUND</span></div>
           <div class="card-status-badge" id="load-badge">WAITING</div>
           <span class="click-ripple-host"></span>

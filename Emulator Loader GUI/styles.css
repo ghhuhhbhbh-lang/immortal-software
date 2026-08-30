@@ -46,6 +46,9 @@ html, body {
   -webkit-user-select: none;
   user-select: none;
 }
+/* Kill any native white scrollbar gutter in WebView2 */
+html { scrollbar-width: none; }
+body::-webkit-scrollbar { width: 0; height: 0; display: none; }
 
 /* WebView2 / browser: real cursor + selectable controls so license key works */
 body.is-webview,
@@ -745,8 +748,20 @@ body.cursor-down  #cursor-tail { width: 26px; height: 26px; }
   position: absolute;
   top: 4.5vh; left: 50%;
   transform: translateX(-50%);
-  display: flex; align-items: baseline; gap: 32px;
+  display: flex; align-items: center; gap: 28px;
   white-space: nowrap;
+}
+.main-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.main-logo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 6px;
+  filter: drop-shadow(0 0 12px rgba(168,85,255,.5));
 }
 .main-wordmark {
   font-size: clamp(10px,.75vw,14px);
@@ -782,6 +797,43 @@ body.cursor-down  #cursor-tail { width: 26px; height: 26px; }
   display: flex; flex-direction: column;
   align-items: center; gap: 30px;
   width: 100%;
+}
+
+.start-dock {
+  width: min(720px, 92%);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px 14px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(20, 12, 36, 0.72), rgba(9, 5, 18, 0.55));
+}
+.start-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: rgba(240, 237, 248, 0.72);
+  font-weight: 650;
+}
+.game-select {
+  width: 100%;
+  background: rgba(8, 6, 16, 0.9);
+  color: #f0edf8;
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  border-radius: 10px;
+  padding: 11px 12px;
+  font-size: 13px;
+}
+.start-btn {
+  min-width: 120px;
+  height: 42px;
+}
+.start-hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 12px;
+  color: rgba(154, 146, 176, 0.95);
 }
 
 /* Cards row */
@@ -1627,19 +1679,42 @@ body.perf-lite .moon-orbit {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 22px;
+  padding: 10px 22px;
   font-size: 9px;
   letter-spacing: .22em;
   color: var(--pur-200);
   pointer-events: none;
-  background: linear-gradient(180deg, rgba(0,0,0,.55), transparent);
+  background: linear-gradient(180deg, rgba(0,0,0,.72), rgba(0,0,0,.18) 70%, transparent);
+  backdrop-filter: blur(6px);
 }
 .sec-rail-top { top: 0; border-bottom: 1px solid var(--line); }
 .sec-rail-bot {
   bottom: 0;
-  background: linear-gradient(0deg, rgba(0,0,0,.55), transparent);
+  background: linear-gradient(0deg, rgba(0,0,0,.72), rgba(0,0,0,.18) 70%, transparent);
   border-top: 1px solid var(--line);
 }
+.sec-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.sec-logo {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 4px;
+  filter: drop-shadow(0 0 8px rgba(168,85,255,.45));
+  flex-shrink: 0;
+}
+.sec-brand-text {
+  background: linear-gradient(180deg, #ffffff 0%, var(--pur-200) 58%, var(--pur-400) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 600;
+}
+.sec-meta { color: var(--muted); }
 .sec-live { display: flex; align-items: center; gap: 7px; color: #9ef0c2; }
 .sec-live i {
   width: 6px; height: 6px; border-radius: 50%;
@@ -1746,4 +1821,35 @@ body.perf-lite .moon-orbit {
 }
 .api-badge[data-state="pending"] {
   color: #eab308;
+}
+
+/* Native WebView2 host chip */
+.host-badge {
+  position: fixed;
+  top: 52px;
+  right: 118px;
+  z-index: 40;
+  font-size: 9px;
+  letter-spacing: .18em;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 252, .28);
+  background: rgba(0,0,0,.72);
+  color: var(--muted, #9a92b0);
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+.host-badge[data-state="ok"] {
+  color: #7dd3fc;
+  border-color: rgba(56,189,248,.45);
+}
+.host-badge[data-state="browser"] {
+  color: #c4b5fd;
+  border-color: rgba(168,85,255,.35);
+}
+.host-badge[data-state="pending"] {
+  color: #eab308;
+}
+@media (max-width: 720px) {
+  .host-badge { right: 14px; top: 84px; }
 }

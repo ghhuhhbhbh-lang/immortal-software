@@ -27,6 +27,7 @@ enum LicenseStatus {
   SUSPENDED
   REVOKED
   EXPIRED
+  COMPROMISED
 }
 
 enum DeviceStatus {
@@ -211,19 +212,24 @@ model Nonce {
 }
 
 model SecurityEvent {
-  id        String   @id @default(cuid())
-  type      String
-  userId    String?
-  licenseId String?
-  ipHash    String?
-  userAgent String?
-  metadata  String?
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  type          String
+  severity      String   @default("INFO")   // CRITICAL | HIGH | MEDIUM | INFO
+  userId        String?
+  licenseId     String?
+  ipHash        String?
+  userAgent     String?
+  metadata      String?  // JSON: { reason, loaderVersion, fingerprint, revoke }
+  actionTaken   String?  // REVOKED | SUSPENDED | LOGGED
+  discordSent   Boolean  @default(false)
+  createdAt     DateTime @default(now())
 
   user    User?    @relation(fields: [userId], references: [id])
   license License? @relation(fields: [licenseId], references: [id])
 
   @@index([userId])
   @@index([type])
+  @@index([severity])
   @@index([createdAt])
+  @@index([licenseId])
 }

@@ -20,9 +20,9 @@ async function main() {
   console.log('Owner created:', owner.username)
 
   const product = await prisma.product.upsert({
-    where: { slug: 'cs2-cheat' },
+    where: { slug: 'immortal-private' },
     update: {},
-    create: { name: 'CS2 Cheat', slug: 'cs2-cheat', description: 'Immortal Software CS2 external cheat' },
+    create: { name: 'Immortal Private', slug: 'immortal-private', description: 'Immortal Software licensed product' },
   })
   console.log('Product created:', product.name)
 

@@ -14,7 +14,9 @@ async function start(): Promise<void> {
   }, 10 * 60 * 1000)
 
   const server = app.listen(config.PORT, () => {
-    logger.info(`Immortal Software API running on port ${config.PORT} [${config.NODE_ENV}]`)
+    logger.info(
+      `Immortal Software API v${config.APP_VERSION} on :${config.PORT} [${config.NODE_ENV}]`
+    )
   })
 
   const shutdown = async (signal: string): Promise<void> => {

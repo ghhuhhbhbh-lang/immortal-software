@@ -1,0 +1,21 @@
+# Build output
+bin/
+Loader/bin/
+CheatDLL/bin/
+
+# VS artifacts
+*.user
+*.suo
+*.aps
+.vs/
+x64/
+Debug/
+Release/
+ipch/
+
+# Embedded resource DLL (copied from build, not source)
+Loader/Resources/CheatDLL.dll
+
+# NuGet/packages cache
+packages/
+*/packages/

@@ -5,6 +5,8 @@ on:
     branches: [main, master]
     paths:
       - 'dashboard/**'
+      - 'portal/**'
+      - 'Emulator Loader GUI/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -28,12 +30,18 @@ jobs:
       - name: Stage portal
         run: |
           mkdir -p _site
-          cp -R dashboard/. _site/
+          cp -R dashboard/. _site/admin/
+          mkdir -p _site/portal
+          cp -R portal/. _site/portal/
+          cp portal/index.html _site/index.html
           if [ -d "Emulator Loader GUI" ]; then
             mkdir -p "_site/Emulator Loader GUI"
-            cp "Emulator Loader GUI/logo2.png" "_site/Emulator Loader GUI/" 2>/dev/null || true
-            cp "Emulator Loader GUI/bg.png" "_site/Emulator Loader GUI/" 2>/dev/null || true
+            cp -R "Emulator Loader GUI/." "_site/Emulator Loader GUI/" 2>/dev/null || true
           fi
+          # Pages is static — point portal at same-origin paths
+          sed -i 's|../Emulator Loader GUI/index.html|../Emulator%20Loader%20GUI/index.html|g' _site/portal/config.js || true
+          # Stamp UI version for cache-bust awareness in static hosts
+          echo "immortal-static 2.3.1 $(date -u +%Y-%m-%dT%H:%M:%SZ)" > _site/VERSION.txt
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

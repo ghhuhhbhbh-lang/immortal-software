@@ -23,7 +23,7 @@
   <PropertyGroup>
     <OutDir>$(ProjectDir)x64\$(Configuration)\</OutDir>
     <IntDir>$(ProjectDir)x64\$(Configuration)\obj\</IntDir>
-    <TargetName>LoaderHost</TargetName>
+    <TargetName>ImmortalLoader</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>

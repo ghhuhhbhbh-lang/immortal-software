@@ -23,7 +23,7 @@ const schema = z.object({
   ATTEST_MAX_AGE_SEC:             z.coerce.number().default(120),
   REQUIRE_HTTPS_CLIENTS:          z.coerce.boolean().default(false),
   DISCORD_WEBHOOK_URL:            z.string().optional(),
-  APP_VERSION:                    z.string().default('2.2.0'),
+  APP_VERSION:                    z.string().default('2.3.1'),
   OFFLINE_GRACE_HOURS:            z.coerce.number().default(12),
 })
 

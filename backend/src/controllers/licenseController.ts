@@ -9,22 +9,29 @@ import { AppError, Errors } from '../utils/errors'
 import { AuthenticatedRequest } from '../types'
 
 const createSchema = z.object({
-  productId: z.string().uuid(),
+  productId: z.string().min(1),
   planId: z.string().min(1),
   quantity: z.number().int().min(1).max(500).default(1),
   durationDays: z.number().int().min(1).optional().nullable(),
   deviceLimit: z.number().int().min(1).max(50).optional(),
-  notes: z.string().max(500).optional(),
 })
 
 export async function handleCreateLicenses(req: Request, res: Response) {
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) { res.status(422).json({ error: 'Invalid request' }); return }
   try {
-    const licenses = await createLicenses(parsed.data)
     const actor = (req as AuthenticatedRequest).user
-    await audit({ eventType: 'ADMIN_ACTION', result: 'SUCCESS', userId: actor.sub, metadata: { action: 'create_licenses', count: licenses.length } })
-    res.status(201).json({ created: licenses.length, licenses })
+    const licenses = await createLicenses({
+      ...parsed.data,
+      createdById: actor.sub,
+    })
+    await audit({
+      eventType: 'ADMIN_ACTION',
+      result: 'SUCCESS',
+      userId: actor.sub,
+      metadata: { action: 'create_licenses', count: licenses.length },
+    })
+    res.status(201).json({ created: licenses.length, licenses, keys: licenses.map(l => l.key) })
   } catch (e) {
     if (e instanceof AppError) res.status(e.statusCode).json({ error: e.message })
     else res.status(500).json({ error: 'Internal server error' })
@@ -40,7 +47,7 @@ export async function handleListLicenses(req: Request, res: Response) {
   const [licenses, total] = await Promise.all([
     prisma.license.findMany({
       where, skip: (page - 1) * limit, take: limit,
-      include: { product: true, plan: true },
+      include: { product: true, plan: true, holder: { select: { username: true } } },
       orderBy: { createdAt: 'desc' },
     }),
     prisma.license.count({ where }),
@@ -48,7 +55,9 @@ export async function handleListLicenses(req: Request, res: Response) {
   res.json({ licenses: licenses.map(l => ({
     id: l.id, keyPrefix: l.keyPrefix, status: l.status,
     product: l.product.name, plan: l.plan.name,
-    expirationDate: l.expirationDate, notes: l.notes,
+    holder: l.holder ? { username: l.holder.username } : null,
+    expiresAt: l.expiresAt,
+    expirationDate: l.expiresAt,
   })), total, page, limit })
 }
 
@@ -90,7 +99,9 @@ export async function handleExtend(req: Request, res: Response) {
 
 export async function handleResetDevices(req: Request, res: Response) {
   try {
-    await resetDevices(req.params.id)
+    const license = await prisma.license.findUnique({ where: { id: req.params.id } })
+    if (!license) throw Errors.NOT_FOUND('License')
+    if (license.holderId) await resetDevices(license.holderId)
     const actor = (req as AuthenticatedRequest).user
     await audit({ eventType: 'DEVICE_RESET', result: 'SUCCESS', userId: actor.sub, licenseId: req.params.id })
     res.json({ success: true })

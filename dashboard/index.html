@@ -11,619 +11,6 @@
 <link rel="stylesheet" href="styles.css">
 <script src="config.js"></script>
 <script src="gate.js"></script>
-<!-- legacy inline styles removed: see styles.css -->
-<style id="legacy-unused" media="not all">
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-:root {
-  --bg:           #0A0A0A;
-  --surface:      #111118;
-  --surface-2:    #1a1a28;
-  --surface-3:    #22203a;
-  --border:       rgba(168,85,247,.18);
-  --border-2:     rgba(168,85,247,.08);
-  --accent:       #A855F7;
-  --accent-dim:   #7C3AED;
-  --accent-glow:  rgba(168,85,247,.22);
-  --accent-soft:  rgba(168,85,247,.10);
-  --text:         #F0EDF8;
-  --text-2:       #9A92B0;
-  --text-3:       #5e5a78;
-  --success:      #22C55E;
-  --success-bg:   rgba(34,197,94,.12);
-  --warning:      #EAB308;
-  --warning-bg:   rgba(234,179,8,.12);
-  --danger:       #EF4444;
-  --danger-bg:    rgba(239,68,68,.12);
-  --info:         #38BDF8;
-  --info-bg:      rgba(56,189,248,.10);
-  --sidebar-w:    240px;
-  --radius:       10px;
-}
-
-html, body { height: 100%; }
-body {
-  font-family: 'Inter', system-ui, sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  display: flex;
-  min-height: 100vh;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
-/* ── SIDEBAR ── */
-.sidebar {
-  width: var(--sidebar-w);
-  min-height: 100vh;
-  background: var(--surface);
-  border-right: 1px solid var(--border-2);
-  display: flex;
-  flex-direction: column;
-  position: fixed;
-  top: 0; left: 0; bottom: 0;
-  z-index: 100;
-}
-
-.sidebar-brand {
-  padding: 24px 20px 20px;
-  border-bottom: 1px solid var(--border-2);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.brand-logo {
-  width: 36px; height: 36px;
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  flex-shrink: 0;
-  box-shadow: 0 0 16px var(--accent-glow);
-}
-
-.brand-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-.brand-name {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: 13px;
-  letter-spacing: .05em;
-  color: var(--text);
-}
-.brand-sub {
-  font-size: 10px;
-  color: var(--text-3);
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.sidebar-nav {
-  flex: 1;
-  padding: 16px 0;
-  overflow-y: auto;
-}
-
-.nav-section {
-  padding: 0 12px;
-  margin-bottom: 8px;
-}
-.nav-label {
-  font-size: 10px;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  padding: 8px 8px 4px;
-  font-weight: 600;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
-  border-radius: 7px;
-  color: var(--text-2);
-  cursor: pointer;
-  transition: all .15s;
-  border: 1px solid transparent;
-  font-size: 13.5px;
-  font-weight: 500;
-  user-select: none;
-}
-.nav-item:hover {
-  background: var(--accent-soft);
-  color: var(--text);
-  border-color: var(--border);
-}
-.nav-item.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--border);
-}
-.nav-item.active .nav-icon { color: var(--accent); }
-.nav-icon { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
-
-.nav-badge {
-  margin-left: auto;
-  background: var(--accent);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 1px 7px;
-  border-radius: 20px;
-  min-width: 18px;
-  text-align: center;
-}
-
-.sidebar-footer {
-  padding: 16px;
-  border-top: 1px solid var(--border-2);
-}
-
-.admin-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 10px;
-  border-radius: var(--radius);
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-}
-
-.admin-avatar {
-  width: 30px; height: 30px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-  display: flex; align-items: center; justify-content: center;
-  font-size: 13px; font-weight: 700; color: #fff;
-  flex-shrink: 0;
-}
-
-.admin-info { flex: 1; min-width: 0; }
-.admin-name { font-weight: 600; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.admin-role { font-size: 10px; color: var(--accent); letter-spacing: .04em; text-transform: uppercase; font-weight: 600; }
-
-.logout-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-3); font-size: 14px;
-  transition: color .15s; padding: 2px;
-}
-.logout-btn:hover { color: var(--danger); }
-
-/* ── MAIN ── */
-.main {
-  margin-left: var(--sidebar-w);
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.topbar {
-  height: 60px;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border-2);
-  display: flex;
-  align-items: center;
-  padding: 0 28px;
-  gap: 16px;
-  position: sticky; top: 0; z-index: 50;
-}
-
-.topbar-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: 17px;
-  flex: 1;
-}
-
-.topbar-actions { display: flex; align-items: center; gap: 10px; }
-
-.icon-btn {
-  width: 34px; height: 34px;
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; color: var(--text-2);
-  transition: all .15s;
-}
-.icon-btn:hover { background: var(--accent-soft); border-color: var(--border); color: var(--accent); }
-
-.status-dot {
-  display: flex; align-items: center; gap: 6px;
-  font-size: 12px; color: var(--text-2);
-}
-.dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--success);
-  box-shadow: 0 0 6px var(--success);
-  animation: pulse-dot 2s ease-in-out infinite;
-}
-@keyframes pulse-dot {
-  0%,100% { opacity: 1; } 50% { opacity: .5; }
-}
-
-.content {
-  flex: 1;
-  padding: 28px;
-  overflow-x: hidden;
-}
-
-/* ── STATS GRID ── */
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  background: var(--surface);
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius);
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  transition: border-color .2s;
-}
-.stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(90deg, var(--accent), var(--accent-dim));
-  opacity: 0;
-  transition: opacity .2s;
-}
-.stat-card:hover { border-color: var(--border); }
-.stat-card:hover::before { opacity: 1; }
-
-.stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.stat-label { font-size: 12px; color: var(--text-2); font-weight: 500; letter-spacing: .03em; }
-.stat-icon {
-  width: 32px; height: 32px;
-  background: var(--accent-soft);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px;
-}
-
-.stat-value {
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: 6px;
-  font-variant-numeric: tabular-nums;
-}
-.stat-change {
-  font-size: 11.5px;
-  font-weight: 500;
-  display: flex; align-items: center; gap: 3px;
-}
-.stat-change.up { color: var(--success); }
-.stat-change.down { color: var(--danger); }
-.stat-change.neutral { color: var(--text-3); }
-
-/* ── PANELS ── */
-.panels-row {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border-2);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border-2);
-}
-.panel-title {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 600;
-  font-size: 14px;
-}
-.panel-actions { display: flex; gap: 8px; align-items: center; }
-
-/* ── TABLE ── */
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-thead th {
-  padding: 10px 16px;
-  text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .07em;
-  text-transform: uppercase;
-  color: var(--text-3);
-  border-bottom: 1px solid var(--border-2);
-  white-space: nowrap;
-}
-tbody tr {
-  border-bottom: 1px solid var(--border-2);
-  transition: background .1s;
-}
-tbody tr:last-child { border-bottom: none; }
-tbody tr:hover { background: var(--surface-2); }
-tbody td {
-  padding: 11px 16px;
-  font-size: 13px;
-  color: var(--text-2);
-  white-space: nowrap;
-}
-tbody td:first-child { color: var(--text); font-weight: 500; }
-
-.badge {
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 2px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: .02em;
-}
-.badge-success { background: var(--success-bg); color: var(--success); }
-.badge-warning { background: var(--warning-bg); color: var(--warning); }
-.badge-danger  { background: var(--danger-bg);  color: var(--danger); }
-.badge-info    { background: var(--info-bg);     color: var(--info); }
-.badge-purple  { background: var(--accent-soft); color: var(--accent); }
-
-.role-badge {
-  font-size: 10px; font-weight: 700; letter-spacing: .06em;
-  text-transform: uppercase;
-  padding: 2px 8px; border-radius: 4px;
-}
-.role-owner  { background: rgba(168,85,247,.25); color: #d8b4fe; }
-.role-admin  { background: rgba(168,85,247,.15); color: var(--accent); }
-.role-user   { background: var(--surface-3); color: var(--text-2); }
-
-/* ── EVENT FEED ── */
-.event-list { display: flex; flex-direction: column; }
-.event-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--border-2);
-  align-items: flex-start;
-}
-.event-item:last-child { border-bottom: none; }
-.event-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  flex-shrink: 0; margin-top: 5px;
-}
-.event-body { flex: 1; min-width: 0; }
-.event-msg { font-size: 12.5px; color: var(--text); line-height: 1.4; }
-.event-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; }
-
-/* ── GENERATE PANEL ── */
-.gen-panel {
-  margin-bottom: 24px;
-}
-.gen-form {
-  padding: 20px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr) auto;
-  gap: 12px;
-  align-items: end;
-}
-
-.field { display: flex; flex-direction: column; gap: 5px; }
-.field label { font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: .04em; text-transform: uppercase; }
-.field select,
-.field input {
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: 7px;
-  color: var(--text);
-  padding: 8px 12px;
-  font-size: 13px;
-  font-family: 'Inter', sans-serif;
-  outline: none;
-  transition: border-color .15s;
-  appearance: none;
-}
-.field select:focus,
-.field input:focus { border-color: var(--accent); }
-
-.btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 18px;
-  border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'Inter', sans-serif;
-  cursor: pointer;
-  border: none;
-  transition: all .15s;
-  white-space: nowrap;
-}
-.btn-primary {
-  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dim) 100%);
-  color: #fff;
-  box-shadow: 0 0 16px var(--accent-glow);
-}
-.btn-primary:hover {
-  box-shadow: 0 0 24px var(--accent-glow);
-  transform: translateY(-1px);
-}
-.btn-ghost {
-  background: var(--surface-2);
-  color: var(--text-2);
-  border: 1px solid var(--border-2);
-}
-.btn-ghost:hover { background: var(--surface-3); color: var(--text); border-color: var(--border); }
-.btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(239,68,68,.2); }
-.btn-danger:hover { background: rgba(239,68,68,.2); }
-
-/* ── KEY OUTPUT ── */
-.key-output {
-  margin: 0 20px 20px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-}
-.key-output-title {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-.key-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-.key-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 8px 12px;
-  background: var(--surface);
-  border-radius: 6px;
-  border: 1px solid var(--border-2);
-}
-.key-text {
-  font-family: 'Space Grotesk', monospace;
-  font-size: 13px;
-  letter-spacing: .1em;
-  color: var(--accent);
-}
-.copy-btn {
-  background: none; border: none; cursor: pointer;
-  color: var(--text-3); font-size: 13px; padding: 2px 4px;
-  border-radius: 4px; transition: all .1s;
-}
-.copy-btn:hover { color: var(--accent); background: var(--accent-soft); }
-.copy-btn.copied { color: var(--success); }
-
-/* ── LOGIN SCREEN ── */
-#login-screen {
-  position: fixed; inset: 0;
-  background: var(--bg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 999;
-}
-.login-card {
-  width: 380px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 40px 36px;
-  box-shadow: 0 0 60px rgba(168,85,247,.12);
-}
-.login-logo-wrap {
-  display: flex; flex-direction: column; align-items: center;
-  gap: 10px; margin-bottom: 32px;
-}
-.login-logo {
-  width: 56px; height: 56px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-  border-radius: 14px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 26px;
-  box-shadow: 0 0 30px var(--accent-glow);
-}
-.login-brand {
-  font-family: 'Space Grotesk', sans-serif;
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: .04em;
-  text-align: center;
-}
-.login-brand span { color: var(--accent); }
-.login-sub { font-size: 12px; color: var(--text-3); letter-spacing: .06em; text-transform: uppercase; text-align: center; }
-
-.login-field { margin-bottom: 14px; }
-.login-field label { display: block; font-size: 11px; font-weight: 600; color: var(--text-2); letter-spacing: .04em; text-transform: uppercase; margin-bottom: 6px; }
-.login-field input {
-  width: 100%;
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: 8px;
-  color: var(--text);
-  padding: 10px 14px;
-  font-size: 14px;
-  font-family: 'Inter', sans-serif;
-  outline: none;
-  transition: border-color .15s;
-}
-.login-field input:focus { border-color: var(--accent); }
-
-.login-btn {
-  width: 100%;
-  padding: 11px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  font-family: 'Space Grotesk', sans-serif;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: .04em;
-  cursor: pointer;
-  box-shadow: 0 0 20px var(--accent-glow);
-  transition: all .2s;
-  margin-top: 8px;
-}
-.login-btn:hover { box-shadow: 0 0 32px var(--accent-glow); transform: translateY(-1px); }
-.login-err { color: var(--danger); font-size: 12px; margin-top: 10px; text-align: center; min-height: 16px; }
-.login-api-note {
-  margin-top: 20px; padding-top: 16px;
-  border-top: 1px solid var(--border-2);
-  font-size: 11px; color: var(--text-3); text-align: center;
-}
-.login-api-note input {
-  width: 100%;
-  background: var(--surface-2);
-  border: 1px solid var(--border-2);
-  border-radius: 6px;
-  color: var(--text-2);
-  padding: 7px 10px;
-  font-size: 12px;
-  font-family: 'Inter', sans-serif;
-  outline: none;
-  margin-top: 6px;
-  transition: border-color .15s;
-}
-.login-api-note input:focus { border-color: var(--border); }
-
-/* ── MISC ── */
-.hidden { display: none !important; }
-.tag { font-size: 11px; color: var(--text-3); }
-
-/* scrollbar */
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
-</style>
 </head>
 <body>
 
@@ -638,7 +25,7 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
     </div>
     <div class="login-field">
       <label>Username</label>
-      <input type="text" id="login-user" placeholder="admin" autocomplete="username">
+      <input type="text" id="login-user" placeholder="Username" autocomplete="username">
     </div>
     <div class="login-field">
       <label>Password</label>
@@ -696,11 +83,19 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
         <span class="nav-icon">🛡️</span> Audit Log
         <span class="nav-badge" id="nav-badge-ev">—</span>
       </div>
+      <div class="nav-item" data-view="threats">
+        <span class="nav-icon">🚨</span> Threat Log
+        <span class="nav-badge" id="nav-badge-threat" style="background:var(--danger);color:#fff">—</span>
+      </div>
     </div>
     <div class="nav-section">
       <div class="nav-label">System</div>
       <div class="nav-item" data-view="products">
         <span class="nav-icon">📦</span> Products
+      </div>
+      <div class="nav-item" data-view="updates">
+        <span class="nav-icon">🚀</span> Updates
+        <span class="nav-badge" id="nav-badge-upd">—</span>
       </div>
     </div>
   </nav>
@@ -744,7 +139,9 @@ const VIEWS = {
   generate: 'Generate Keys',
   users: 'Users',
   events: 'Audit Log',
+  threats: 'Threat Log',
   products: 'Products & Plans',
+  updates: 'DLL Updates',
 };
 
 // ── State ──────────────────────────────────────────────────
@@ -813,19 +210,29 @@ function bootDashboard(username, role) {
   document.getElementById('sidebar-role').textContent = role;
   navigateTo('dashboard');
   pingApi();
-  setInterval(pingApi, 30000);
+  setInterval(pingApi, 60000);
 }
 
 async function pingApi() {
+  const dot = document.getElementById('api-dot');
+  const txt = document.getElementById('api-status-txt');
   try {
-    await fetch(`${API}/health`);
-    document.getElementById('api-dot').style.background = 'var(--success)';
-    document.getElementById('api-dot').style.boxShadow = '0 0 6px var(--success)';
-    document.getElementById('api-status-txt').textContent = 'Live';
+    const r = await fetch(`${API}/health`);
+    const data = await r.json().catch(() => ({}));
+    const degraded = data.status === 'degraded' || data.db === 'down';
+    if (!r.ok || degraded) {
+      dot.style.background = 'var(--warning)';
+      dot.style.boxShadow = '0 0 6px var(--warning)';
+      txt.textContent = data.version ? `DB? · ${data.version}` : 'Degraded';
+      return;
+    }
+    dot.style.background = 'var(--success)';
+    dot.style.boxShadow = '0 0 6px var(--success)';
+    txt.textContent = data.version ? `Live · ${data.version}` : 'Live';
   } catch {
-    document.getElementById('api-dot').style.background = 'var(--danger)';
-    document.getElementById('api-dot').style.boxShadow = '0 0 6px var(--danger)';
-    document.getElementById('api-status-txt').textContent = 'Offline';
+    dot.style.background = 'var(--danger)';
+    dot.style.boxShadow = '0 0 6px var(--danger)';
+    txt.textContent = 'Offline';
   }
 }
 
@@ -1164,6 +571,394 @@ async function renderProducts() {
   }
 }
 
+// ── Threat Log View ────────────────────────────────────────
+const THREAT_SEVERITY_COLORS = {
+  CRITICAL: { bg: 'rgba(239,68,68,.15)', border: '#ef4444', badge: '#ef4444' },
+  HIGH:     { bg: 'rgba(249,115,22,.12)', border: '#f97316', badge: '#f97316' },
+  MEDIUM:   { bg: 'rgba(234,179,8,.10)',  border: '#eab308', badge: '#eab308' },
+  INFO:     { bg: 'rgba(99,102,241,.08)', border: '#6366f1', badge: '#6366f1' },
+};
+
+async function renderThreats() {
+  const el = document.getElementById('main-content');
+  el.innerHTML = `
+  <div style="max-width:1100px;margin:0 auto">
+
+    <!-- Filter bar -->
+    <div class="panel" style="margin-bottom:20px;padding:16px 20px">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px">Severity</label>
+          <select id="thr-sev" style="background:var(--surface-2);border:1.5px solid var(--border-2);border-radius:8px;color:var(--text-1);padding:7px 12px;font-size:13px;cursor:pointer">
+            <option value="">All</option>
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="HIGH">HIGH</option>
+            <option value="MEDIUM">MEDIUM</option>
+            <option value="INFO">INFO</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:4px">Event Type</label>
+          <input id="thr-type" type="text" placeholder="e.g. DEBUGGER_DETECTED"
+            style="background:var(--surface-2);border:1.5px solid var(--border-2);border-radius:8px;color:var(--text-1);padding:7px 12px;font-size:13px;width:220px">
+        </div>
+        <div style="margin-top:16px">
+          <button onclick="loadThreats(1)" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;border-radius:8px;padding:8px 20px;font-weight:700;font-size:13px;cursor:pointer">Filter</button>
+        </div>
+        <div style="margin-left:auto;margin-top:16px;color:var(--text-3);font-size:12.5px" id="thr-count-lbl"></div>
+      </div>
+    </div>
+
+    <!-- Events table -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Security Events</span>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="loadThreats(1)">Refresh</button>
+      </div>
+      <div id="thr-table" style="min-height:200px">
+        <div style="padding:40px;text-align:center;color:var(--text-3)">Loading…</div>
+      </div>
+      <div id="thr-pagination" style="padding:16px 20px;display:flex;gap:8px;justify-content:center"></div>
+    </div>
+  </div>
+  `;
+  await loadThreats(1);
+}
+
+let _thrPage = 1;
+
+async function loadThreats(page) {
+  _thrPage = page || 1;
+  const tableEl = document.getElementById('thr-table');
+  const pagEl   = document.getElementById('thr-pagination');
+  const countLbl= document.getElementById('thr-count-lbl');
+  if (!tableEl) return;
+  tableEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3)">Loading…</div>';
+
+  const sev  = document.getElementById('thr-sev')?.value || '';
+  const type = document.getElementById('thr-type')?.value.trim() || '';
+  let qs = `?page=${_thrPage}&limit=20`;
+  if (sev)  qs += `&severity=${encodeURIComponent(sev)}`;
+  if (type) qs += `&type=${encodeURIComponent(type)}`;
+
+  try {
+    const data = await apiFetch(`/api/security/events${qs}`);
+    if (!data) return;
+    const { events, total, limit } = data;
+    const totalPages = Math.ceil(total / (limit || 20));
+
+    // Update nav badge on first load.
+    const badge = document.getElementById('nav-badge-threat');
+    if (badge && !sev && !type) badge.textContent = total || 0;
+    if (countLbl) countLbl.textContent = `${total.toLocaleString()} total events`;
+
+    if (!events.length) {
+      tableEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3)">No events match the current filter</div>';
+      if (pagEl) pagEl.innerHTML = '';
+      return;
+    }
+
+    tableEl.innerHTML = events.map(ev => {
+      let meta = {};
+      try { meta = JSON.parse(ev.metadata || '{}'); } catch {}
+      const sev   = meta.severity || 'INFO';
+      const cols  = THREAT_SEVERITY_COLORS[sev] || THREAT_SEVERITY_COLORS.INFO;
+      const reason= meta.reason || '—';
+      const ver   = meta.loaderVersion || '—';
+      const fp    = (meta.fingerprint || '').slice(0, 16) || '—';
+      const action= meta.revoke ? 'REVOKED' : ev.actionTaken || 'LOGGED';
+
+      return `
+      <div style="border-bottom:1px solid var(--border-2);padding:16px 20px;background:${cols.bg};border-left:3px solid ${cols.border}">
+        <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">
+              <span style="background:${cols.badge};color:#fff;font-size:10px;font-weight:800;padding:3px 10px;border-radius:12px;letter-spacing:.07em">${sev}</span>
+              <span style="font-family:monospace;font-weight:700;color:var(--text-1);font-size:13px">${ev.type}</span>
+            </div>
+            <div style="color:var(--text-2);font-size:12.5px;margin-bottom:4px">📋 ${reason}</div>
+            <div style="color:var(--text-3);font-size:11.5px">Loader v${ver} · Device: <code style="font-size:10px;background:var(--surface-2);padding:1px 4px;border-radius:4px">${fp}</code></div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:12px;color:var(--text-3);margin-bottom:6px">${fmtDate(ev.createdAt, true)}</div>
+            <div style="font-size:11.5px;color:var(--text-2)">User: ${ev.user?.username || ev.userId?.slice(0, 8) + '…' || '—'}</div>
+            <div style="font-size:11.5px;color:var(--text-2)">License: ${ev.license?.keyPrefix || '—'}</div>
+            <div style="margin-top:8px">
+              <span style="background:${meta.revoke ? 'rgba(239,68,68,.15)' : 'rgba(99,102,241,.1)'};color:${meta.revoke ? '#ef4444' : '#818cf8'};font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;letter-spacing:.06em">${action}</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Pagination.
+    if (pagEl) {
+      let pages = '';
+      for (let i = 1; i <= Math.min(totalPages, 10); i++) {
+        pages += `<button onclick="loadThreats(${i})"
+          style="background:${i === _thrPage ? 'linear-gradient(135deg,#8B5CF6,#6D28D9)' : 'var(--surface-2)'};color:${i === _thrPage ? '#fff' : 'var(--text-1)'};border:1.5px solid ${i === _thrPage ? 'transparent' : 'var(--border-2)'};border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer">${i}</button>`;
+      }
+      pagEl.innerHTML = pages;
+    }
+  } catch (e) {
+    tableEl.innerHTML = `<div style="padding:24px;color:var(--danger)">${e.message}</div>`;
+  }
+}
+
+// ── Updates View ───────────────────────────────────────────
+async function renderUpdates() {
+  const el = document.getElementById('main-content');
+  el.innerHTML = `
+  <div style="max-width:900px;margin:0 auto">
+
+    <!-- Upload card -->
+    <div class="panel" style="margin-bottom:24px">
+      <div class="panel-header">
+        <span class="panel-title">Upload New DLL</span>
+        <span id="upd-live-chip" style="display:none;background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.08em">LIVE: —</span>
+      </div>
+      <div id="drop-zone" style="
+        border:2px dashed var(--border-2);border-radius:14px;padding:48px 32px;
+        text-align:center;cursor:pointer;transition:all .2s;margin:0 20px 20px;
+        background:var(--surface-2);position:relative;user-select:none"
+        ondragover="event.preventDefault();this.style.borderColor='#8B5CF6';this.style.background='rgba(139,92,246,.08)'"
+        ondragleave="this.style.borderColor='';this.style.background='var(--surface-2)'"
+        ondrop="handleDllDrop(event)">
+        <div style="font-size:2.5rem;margin-bottom:12px">🎯</div>
+        <div style="color:var(--text-1);font-family:'Space Grotesk',sans-serif;font-weight:600;font-size:15px;margin-bottom:6px">Drop CheatDLL.dll here</div>
+        <div style="color:var(--text-3);font-size:12.5px">or click to browse — .dll only, max 64 MB</div>
+        <input type="file" id="dll-file-input" accept=".dll" style="position:absolute;inset:0;opacity:0;cursor:pointer">
+      </div>
+
+      <div style="display:flex;gap:12px;align-items:flex-end;padding:0 20px 20px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px">
+          <label style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px">Version (semver)</label>
+          <input id="upd-version" type="text" placeholder="2.2.0"
+            style="width:100%;background:var(--surface-2);border:1.5px solid var(--border-2);border-radius:8px;color:var(--text-1);padding:10px 14px;font-size:14px;outline:none;box-sizing:border-box">
+        </div>
+        <div style="flex:2;min-width:220px" id="upd-file-name-wrap" style="display:none">
+          <label style="font-size:11px;font-weight:600;color:var(--text-3);letter-spacing:.06em;text-transform:uppercase;display:block;margin-bottom:6px">Selected File</label>
+          <div id="upd-file-name" style="background:var(--surface-2);border:1.5px solid var(--border-2);border-radius:8px;color:var(--text-2);padding:10px 14px;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">No file selected</div>
+        </div>
+        <button id="upd-upload-btn" onclick="doUpload()"
+          style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;border-radius:10px;padding:11px 28px;font-weight:700;font-size:13px;letter-spacing:.06em;cursor:pointer;white-space:nowrap;transition:opacity .15s"
+          disabled>UPLOAD DLL</button>
+      </div>
+
+      <div id="upd-upload-status" style="padding:0 20px 16px;font-size:13px;color:var(--text-3);min-height:24px"></div>
+
+      <!-- Progress bar -->
+      <div id="upd-progress-wrap" style="display:none;padding:0 20px 20px">
+        <div style="height:6px;background:var(--border-2);border-radius:999px;overflow:hidden">
+          <div id="upd-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#8B5CF6,#A78BFA);border-radius:999px;transition:width .3s"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Version history table -->
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Version History</span>
+        <button class="btn btn-ghost" style="padding:5px 12px;font-size:12px" onclick="loadVersions()">Refresh</button>
+      </div>
+      <div class="table-wrap" id="upd-table">
+        <div style="padding:40px;text-align:center;color:var(--text-3)">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+  `;
+
+  // Wire file input
+  const fileInput = document.getElementById('dll-file-input');
+  const dropZone  = document.getElementById('drop-zone');
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) selectDllFile(fileInput.files[0]);
+  });
+  dropZone.addEventListener('click', e => {
+    if (e.target !== fileInput) fileInput.click();
+  });
+
+  await loadVersions();
+}
+
+let _selectedDllFile = null;
+
+function selectDllFile(file) {
+  _selectedDllFile = file;
+  const nameEl = document.getElementById('upd-file-name');
+  const wrapEl = document.getElementById('upd-file-name-wrap');
+  if (nameEl) {
+    nameEl.textContent = `${file.name}  (${(file.size/1024/1024).toFixed(2)} MB)`;
+  }
+  if (wrapEl) wrapEl.style.display = 'block';
+  const btn = document.getElementById('upd-upload-btn');
+  if (btn) btn.disabled = false;
+  const dz = document.getElementById('drop-zone');
+  if (dz) { dz.style.borderColor = '#8B5CF6'; dz.style.background = 'rgba(139,92,246,.06)'; }
+}
+
+function handleDllDrop(event) {
+  event.preventDefault();
+  const dz = document.getElementById('drop-zone');
+  dz.style.borderColor = '';
+  dz.style.background  = 'var(--surface-2)';
+  const file = event.dataTransfer.files[0];
+  if (!file) return;
+  if (!file.name.toLowerCase().endsWith('.dll')) {
+    setUploadStatus('Only .dll files are accepted', 'var(--danger)');
+    return;
+  }
+  selectDllFile(file);
+}
+
+function setUploadStatus(msg, color) {
+  const el = document.getElementById('upd-upload-status');
+  if (el) { el.textContent = msg; el.style.color = color || 'var(--text-3)'; }
+}
+
+async function doUpload() {
+  if (!_selectedDllFile) return;
+  const ver = (document.getElementById('upd-version')?.value || '').trim();
+  if (!/^\d+\.\d+\.\d+$/.test(ver)) {
+    setUploadStatus('Enter a valid semver version (e.g. 2.2.0)', 'var(--danger)');
+    return;
+  }
+
+  const btn = document.getElementById('upd-upload-btn');
+  btn.disabled = true;
+  btn.textContent = 'UPLOADING…';
+
+  const progressWrap = document.getElementById('upd-progress-wrap');
+  const progressBar  = document.getElementById('upd-progress-bar');
+  progressWrap.style.display = 'block';
+  progressBar.style.width = '0%';
+
+  setUploadStatus('Uploading…', 'var(--text-2)');
+
+  const fd = new FormData();
+  fd.append('file', _selectedDllFile);
+  fd.append('version', ver);
+
+  try {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `${API}/api/update/admin/upload`);
+    xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+    xhr.upload.onprogress = e => {
+      if (e.lengthComputable) progressBar.style.width = `${Math.round(e.loaded/e.total*90)}%`;
+    };
+    await new Promise((resolve, reject) => {
+      xhr.onload  = () => resolve(xhr);
+      xhr.onerror = () => reject(new Error('Network error'));
+      xhr.send(fd);
+    });
+    progressBar.style.width = '100%';
+    if (xhr.status === 201) {
+      const resp = JSON.parse(xhr.responseText);
+      setUploadStatus(`✓ Uploaded v${resp.version}  ·  SHA-256: ${resp.sha256}`, 'var(--success)');
+      _selectedDllFile = null;
+      document.getElementById('upd-version').value = '';
+      document.getElementById('upd-file-name').textContent = 'No file selected';
+      document.getElementById('dll-file-input').value = '';
+      btn.textContent = 'UPLOAD DLL';
+      await loadVersions();
+    } else {
+      const err = JSON.parse(xhr.responseText);
+      setUploadStatus(`Error: ${err.error || xhr.status}`, 'var(--danger)');
+      btn.disabled = false;
+      btn.textContent = 'UPLOAD DLL';
+    }
+  } catch (e) {
+    setUploadStatus(`Upload failed: ${e.message}`, 'var(--danger)');
+    btn.disabled = false;
+    btn.textContent = 'UPLOAD DLL';
+  }
+  setTimeout(() => { progressWrap.style.display = 'none'; }, 1500);
+}
+
+async function doSetLive(version) {
+  try {
+    await apiFetch(`/api/update/admin/set-live/${encodeURIComponent(version)}`, { method: 'POST' });
+    setUploadStatus(`✓ v${version} is now LIVE`, 'var(--success)');
+    await loadVersions();
+  } catch (e) {
+    setUploadStatus(`Error: ${e.message}`, 'var(--danger)');
+  }
+}
+
+async function doDeleteVersion(version) {
+  if (!confirm(`Delete version ${version}? This is permanent.`)) return;
+  try {
+    await apiFetch(`/api/update/admin/versions/${encodeURIComponent(version)}`, { method: 'DELETE' });
+    await loadVersions();
+  } catch (e) {
+    setUploadStatus(`Error: ${e.message}`, 'var(--danger)');
+  }
+}
+
+async function loadVersions() {
+  const tableEl = document.getElementById('upd-table');
+  const chipEl  = document.getElementById('upd-live-chip');
+  if (!tableEl) return;
+  tableEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3)">Loading…</div>';
+  try {
+    const data = await apiFetch('/api/update/admin/versions');
+    if (!data) return;
+    const { live, versions } = data;
+
+    // Update badge
+    const badge = document.getElementById('nav-badge-upd');
+    if (badge) badge.textContent = versions.length || 0;
+
+    // Live chip in panel header
+    if (chipEl) {
+      chipEl.style.display = live ? 'inline-block' : 'none';
+      chipEl.textContent = live ? `LIVE: v${live}` : '';
+    }
+
+    if (!versions.length) {
+      tableEl.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-3)">No versions uploaded yet</div>';
+      return;
+    }
+
+    tableEl.innerHTML = `
+    <table class="tbl" style="width:100%">
+      <thead><tr>
+        <th>Version</th>
+        <th>SHA-256</th>
+        <th>Size</th>
+        <th>Uploaded</th>
+        <th>By</th>
+        <th>Status</th>
+        <th style="text-align:right">Actions</th>
+      </tr></thead>
+      <tbody>
+        ${versions.map(v => `
+        <tr>
+          <td style="font-family:monospace;font-weight:700;color:var(--text-1)">
+            v${v.version}
+            ${v.live ? '<span style="margin-left:6px;background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:12px;letter-spacing:.07em">LIVE</span>' : ''}
+          </td>
+          <td style="font-family:monospace;font-size:11px;color:var(--text-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${v.sha256}">${v.sha256}</td>
+          <td style="color:var(--text-2);font-size:12.5px">${v.sizeBytes ? (v.sizeBytes/1024/1024).toFixed(2)+' MB' : '—'}</td>
+          <td style="color:var(--text-2);font-size:12px">${fmtDate(v.uploadedAt, true)}</td>
+          <td style="color:var(--text-2);font-size:12px">${v.uploadedBy || '—'}</td>
+          <td><span class="badge badge-${v.live ? 'success' : 'warning'}">${v.live ? 'Live' : 'Staged'}</span></td>
+          <td style="text-align:right;white-space:nowrap">
+            ${!v.live ? `<button onclick="doSetLive('${v.version}')"
+              style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;border-radius:7px;padding:5px 14px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px;letter-spacing:.04em">Set Live</button>` : ''}
+            ${!v.live ? `<button onclick="doDeleteVersion('${v.version}')"
+              style="background:transparent;color:var(--danger);border:1.5px solid var(--danger);border-radius:7px;padding:4px 12px;font-size:12px;cursor:pointer">Delete</button>` : ''}
+            ${v.live ? '<span style="color:var(--text-3);font-size:12px">Protected</span>' : ''}
+          </td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+  } catch (e) {
+    tableEl.innerHTML = `<div style="padding:24px;color:var(--danger)">${e.message}</div>`;
+  }
+}
+
 // ── Renderers map ──────────────────────────────────────────
 const RENDERERS = {
   dashboard: renderDashboard,
@@ -1171,7 +966,9 @@ const RENDERERS = {
   generate: renderGenerate,
   users: renderUsers,
   events: renderEvents,
+  threats: renderThreats,
   products: renderProducts,
+  updates: renderUpdates,
 };
 
 // ── Helpers ────────────────────────────────────────────────
