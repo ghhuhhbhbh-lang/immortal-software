@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  PREMIUM
+  RESELLER
+  STAFF
+  ADMIN
+  OWNER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum LicenseStatus {
+  ACTIVE
+  SUSPENDED
+  REVOKED
+  EXPIRED
+}
+
+enum DeviceStatus {
+  ACTIVE
+  REVOKED
+}
+
+model User {
+  id           String     @id @default(cuid())
+  username     String     @unique
+  email        String     @unique
+  passwordHash String
+  role         Role       @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  sessions       Session[]
+  refreshTokens  RefreshToken[]
+  devices        Device[]
+  licenses       License[]       @relation("LicenseHolder")
+  createdLicenses License[]      @relation("LicenseCreator")
+  securityEvents SecurityEvent[]
+}
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  plans    Plan[]
+  licenses License[]
+}
+
+model Plan {
+  id          String   @id @default(cuid())
+  productId   String
+  name        String
+  durationDays Int
+  price       Decimal  @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  product  Product   @relation(fields: [productId], references: [id])
+  licenses License[]
+}
+
+model License {
+  id          String        @id @default(cuid())
+  keyHash     String        @unique
+  keyPrefix   String
+  productId   String
+  planId      String
+  holderId    String?
+  status      LicenseStatus @default(ACTIVE)
+  expiresAt   DateTime?
+  activatedAt DateTime?
+  createdById String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  product   Product         @relation(fields: [productId], references: [id])
+  plan      Plan            @relation(fields: [planId], references: [id])
+  holder    User?           @relation("LicenseHolder", fields: [holderId], references: [id])
+  createdBy User            @relation("LicenseCreator", fields: [createdById], references: [id])
+  events    SecurityEvent[]
+
+  @@index([keyPrefix])
+  @@index([holderId])
+}
+
+model Session {
+  id          String    @id @default(cuid())
+  userId      String
+  deviceId    String?
+  ipHash      String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+  revokedAt   DateTime?
+
+  user          User           @relation(fields: [userId], references: [id])
+  refreshTokens RefreshToken[]
+
+  @@index([userId])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  userId    String
+  sessionId String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  user    User    @relation(fields: [userId], references: [id])
+  session Session @relation(fields: [sessionId], references: [id])
+
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model Device {
+  id              String       @id @default(cuid())
+  userId          String
+  fingerprintHash String
+  status          DeviceStatus @default(ACTIVE)
+  lastSeenAt      DateTime     @default(now())
+  createdAt       DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model Nonce {
+  id        String   @id
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+model SecurityEvent {
+  id        String   @id @default(cuid())
+  type      String
+  userId    String?
+  licenseId String?
+  ipHash    String?
+  userAgent String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  user    User?    @relation(fields: [userId], references: [id])
+  license License? @relation(fields: [licenseId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+}
