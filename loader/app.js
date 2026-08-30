@@ -1085,8 +1085,8 @@ function showResultSuccess(note) {
   mark.className = 'result-mark success';
   icon.innerHTML = '<polyline points="8,24 20,36 40,14" stroke="#e9e9ec" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
   title.textContent = 'READY';
-  rmsg.textContent  = note || 'Loader pipeline finished.';
-  if (rmsg2) rmsg2.textContent = isNative ? 'WebView host acknowledged the hand-off.' : 'Browser preview mode.';
+  rmsg.textContent  = note || 'Injector linked — CheatDLL loaded.';
+  if (rmsg2) rmsg2.textContent = isNative ? 'CS2 process attached via Loader host.' : 'Browser preview mode.';
   showScreen('result');
 }
 function showResultSpooferSuccess() {
@@ -1111,8 +1111,14 @@ function showResultError(errText) {
   mark.className = 'result-mark error';
   icon.innerHTML = '<line x1="14" y1="14" x2="34" y2="34" stroke="#c96b6b" stroke-width="2" stroke-linecap="round"/><line x1="34" y1="14" x2="14" y2="34" stroke="#c96b6b" stroke-width="2" stroke-linecap="round"/>';
   title.textContent = 'FAILED';
-  rmsg.textContent  = errText;
-  if (rmsg2) rmsg2.textContent = '';
+  const clean = String(errText || 'Unknown error').replace(/[^\x20-\x7E]/g, ' ').trim();
+  rmsg.textContent  = clean;
+  if (rmsg2) {
+    if (/CS2 is not running/i.test(clean)) rmsg2.textContent = 'Open Counter-Strike 2 first, then Launch again.';
+    else if (/CheatDLL/i.test(clean)) rmsg2.textContent = 'Build CheatDLL and keep it next to Loader.exe.';
+    else if (/Session invalid/i.test(clean)) rmsg2.textContent = 'Log in with a valid license key, then Launch.';
+    else rmsg2.textContent = '';
+  }
   showScreen('result');
 }
 
