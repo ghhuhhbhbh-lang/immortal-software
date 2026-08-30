@@ -1,0 +1,22 @@
+backend/.env
+backend/node_modules/
+backend/dist/
+backend/logs/
+node_modules/
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.suo
+*.user
+
+# VS build artifacts
+pablo/**/.vs/
+pablo/**/bin/
+pablo/**/obj/
+pablo/**/*.user
+pablo/**/*.suo
+pablo/**/*.db
+pablo/**/*.VC.db
+pablo/**/*.opendb
