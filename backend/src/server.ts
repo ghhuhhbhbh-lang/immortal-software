@@ -10,7 +10,7 @@ async function start(): Promise<void> {
   logger.info('Database connected — Immortal Software API starting')
 
   setInterval(() => {
-    purgeExpiredRecords().catch(err => logger.error('Purge failed', { err }))
+    purgeExpiredRecords().catch((err: unknown) => logger.error('Purge failed', { err }))
   }, 10 * 60 * 1000)
 
   const server = app.listen(config.PORT, () => {
@@ -30,7 +30,7 @@ async function start(): Promise<void> {
   process.on('SIGINT',  () => shutdown('SIGINT'))
 }
 
-start().catch(err => {
+start().catch((err: unknown) => {
   console.error('Fatal startup error:', err)
   process.exit(1)
 })

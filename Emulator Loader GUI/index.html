@@ -6,7 +6,20 @@
 <title>Immortal Software</title>
 <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="is-webview-pending">
+
+<div class="sec-scan" aria-hidden="true"></div>
+<div class="sec-vignette" aria-hidden="true"></div>
+<header class="sec-rail sec-rail-top">
+  <span>IMMORTAL // CLASSIFIED</span>
+  <span class="sec-live"><i></i> CHANNEL LIVE</span>
+  <span>AES-256 · TLS 1.3</span>
+</header>
+<footer class="sec-rail sec-rail-bot">
+  <span>UNAUTHORIZED ACCESS PROHIBITED</span>
+  <span>SESSION HARDENED</span>
+</footer>
+<div class="sec-corners" aria-hidden="true"></div>
 
 <canvas id="stars"></canvas>
 
@@ -64,10 +77,16 @@
           <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
         </svg>
       </button>
+      <div class="login-clearance">CLEARANCE REQUIRED</div>
       <div class="login-brand">
         <img class="login-logo" src="logo2.png" alt="" draggable="false" onerror="this.style.display='none'"/>
         <p class="login-wordmark">IMMORTAL SOFTWARE</p>
         <p class="login-sub">SECURE ACCESS SYSTEM</p>
+      </div>
+      <div class="login-seals">
+        <span>ENCRYPTED</span>
+        <span>HWID BOUND</span>
+        <span>LOCK STEP</span>
       </div>
       <div class="login-sep"></div>
       <div class="input-wrap" id="key-wrap">
@@ -77,11 +96,16 @@
         </svg>
         <input
           id="key-input"
-          type="password"
+          type="text"
+          inputmode="text"
           placeholder="XXXX-XXXX-XXXX-XXXX-XXXX"
           autocomplete="off"
+          autocapitalize="characters"
           spellcheck="false"
+          maxlength="24"
+          aria-label="License key"
         />
+        <button type="button" id="key-reveal" class="key-reveal" aria-label="Show or hide key" title="Show key">···</button>
       </div>
       <button id="auth-btn" class="btn-primary">
         <span class="btn-text">AUTHENTICATE</span>
@@ -89,6 +113,7 @@
       </button>
       <p class="auth-error" id="auth-error"></p>
       <p class="auth-footer">Immortal Software &mdash; Protected by military-grade encryption</p>
+      <a class="portal-link" href="../dashboard/index.html" style="display:inline-block;margin-top:16px">KEY PORTAL</a>
     </div>
   </div>
 
@@ -102,6 +127,7 @@
     </button>
     <header class="main-header">
       <span class="main-wordmark">IMMORTAL SOFTWARE</span>
+      <a class="portal-link" id="portal-link" href="../dashboard/index.html" target="_blank" rel="noopener">KEY PORTAL</a>
       <span class="main-user" id="main-user"></span>
     </header>
     <div class="main-body">
@@ -141,6 +167,7 @@
           </div>
           <p class="card-label">LAUNCH PRIVATE</p>
           <p class="card-caption">INJECT MODULE</p>
+          <div class="card-seals"><span>SECURE</span><span>BOUND</span></div>
           <div class="card-status-badge" id="load-badge">WAITING</div>
           <span class="click-ripple-host"></span>
         </div>
@@ -160,6 +187,7 @@
           </div>
           <p class="card-label">LAUNCH EMU</p>
           <p class="card-caption">EMULATOR MODULE</p>
+          <div class="card-seals"><span>SECURE</span><span>BOUND</span></div>
           <div class="card-status-badge" id="emu-badge">READY</div>
           <span class="click-ripple-host"></span>
         </div>
@@ -179,6 +207,7 @@
           </div>
           <p class="card-label">SPOOFER</p>
           <p class="card-caption">HWID SPOOF</p>
+          <div class="card-seals"><span>SECURE</span><span>BOUND</span></div>
           <div class="card-status-badge" id="spoof-badge">READY</div>
           <span class="click-ripple-host"></span>
         </div>
@@ -243,6 +272,7 @@
 
 </div>
 
+<script src="config.js"></script>
 <script src="app.js"></script>
 <script src="ambient.js"></script>
 </body>

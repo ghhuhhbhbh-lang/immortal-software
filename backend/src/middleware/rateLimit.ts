@@ -6,7 +6,8 @@ export const loginLimiter = rateLimit({
   max: config.RATE_LIMIT_LOGIN_MAX,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Too many login attempts. Please wait.' },
+  skipSuccessfulRequests: true,
+  message: { error: 'Too many login attempts. Please wait a minute and try again.' },
 })
 
 export const apiLimiter = rateLimit({
@@ -14,7 +15,7 @@ export const apiLimiter = rateLimit({
   max: config.RATE_LIMIT_API_MAX,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Rate limit exceeded.' },
+  message: { error: 'You are sending requests too quickly. Slow down a bit.' },
 })
 
 export const activateLimiter = rateLimit({
@@ -22,5 +23,5 @@ export const activateLimiter = rateLimit({
   max: config.RATE_LIMIT_ACTIVATE_MAX,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: 'Activation limit reached. Try again later.' },
+  message: { error: 'Activation limit reached for this hour. Try again later.' },
 })

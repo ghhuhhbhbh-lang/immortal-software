@@ -32,6 +32,7 @@ enum LicenseStatus {
 enum DeviceStatus {
   ACTIVE
   REVOKED
+  PENDING_VERIFICATION
 }
 
 model User {
@@ -43,6 +44,7 @@ model User {
   status       UserStatus @default(ACTIVE)
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  lastLoginAt  DateTime?
 
   sessions       Session[]
   refreshTokens  RefreshToken[]
@@ -50,6 +52,13 @@ model User {
   licenses       License[]       @relation("LicenseHolder")
   createdLicenses License[]      @relation("LicenseCreator")
   securityEvents SecurityEvent[]
+  
+  // Hardware binding settings
+  maxDevices     Int      @default(3)
+  requireHardwareVerification Boolean @default(false)
+  
+  @@index([username])
+  @@index([email])
 }
 
 model Product {
@@ -62,6 +71,11 @@ model Product {
 
   plans    Plan[]
   licenses License[]
+  
+  // Hardware binding configuration
+  deviceLimit        Int     @default(1)
+  hardwareBindingRequired Boolean @default(true)
+  allowVirtualMachines       Boolean @default(false)
 }
 
 model Plan {
@@ -75,6 +89,9 @@ model Plan {
 
   product  Product   @relation(fields: [productId], references: [id])
   licenses License[]
+  
+  // Plan-specific device limits
+  deviceLimit Int @default(1)
 }
 
 model License {
@@ -96,25 +113,51 @@ model License {
   holder    User?           @relation("LicenseHolder", fields: [holderId], references: [id])
   createdBy User            @relation("LicenseCreator", fields: [createdById], references: [id])
   events    SecurityEvent[]
+  devices   Device[]
+  sessions  Session[]
 
+  // Enhanced activation tracking
+  deviceLimit          Int     @default(1)
+  activationFingerprint String?
+  activationIp         String?
+  hwid                 String? // Hardware ID for binding
+  
   @@index([keyPrefix])
   @@index([holderId])
+  @@index([hwid])
 }
 
 model Session {
   id          String    @id @default(cuid())
-  userId      String
+  userId      String?
+  licenseId   String?
   deviceId    String?
   ipHash      String?
   userAgent   String?
   createdAt   DateTime  @default(now())
   lastSeenAt  DateTime  @default(now())
+  expiresAt   DateTime
+  isRevoked   Boolean   @default(false)
   revokedAt   DateTime?
+  revokedReason String?
 
-  user          User           @relation(fields: [userId], references: [id])
+  user          User?           @relation(fields: [userId], references: [id])
+  license       License?        @relation(fields: [licenseId], references: [id])
   refreshTokens RefreshToken[]
-
+  
+  // Enhanced device and security tracking
+  deviceFingerprint    String?
+  riskScore           Int?     @default(0)
+  parentSessionId     String?  // For session chains during refresh
+  hardwareVerified    Boolean? @default(false)
+  hardwareVerifiedAt  DateTime?
+  verificationChallenge String?
+  challengeExpiresAt   DateTime?
+  
   @@index([userId])
+  @@index([licenseId])
+  @@index([deviceFingerprint])
+  @@index([riskScore])
 }
 
 model RefreshToken {
@@ -135,15 +178,28 @@ model RefreshToken {
 
 model Device {
   id              String       @id @default(cuid())
-  userId          String
+  userId          String?
+  licenseId       String?
   fingerprintHash String
   status          DeviceStatus @default(ACTIVE)
   lastSeenAt      DateTime     @default(now())
   createdAt       DateTime     @default(now())
-
-  user User @relation(fields: [userId], references: [id])
-
+  
+  user    User?    @relation(fields: [userId], references: [id])
+  license License? @relation(fields: [licenseId], references: [id])
+  
+  // Enhanced hardware tracking
+  hardwareInfo    Json?   // Detailed hardware information
+  riskScore       Int     @default(0)
+  verifiedAt      DateTime?
+  name            String? // User-friendly device name
+  lastIpHash      String?
+  
+  @@unique([userId, fingerprintHash])
+  @@unique([licenseId, fingerprintHash])
   @@index([userId])
+  @@index([licenseId])
+  @@index([riskScore])
 }
 
 model Nonce {

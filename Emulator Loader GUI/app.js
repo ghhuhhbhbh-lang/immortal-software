@@ -2,7 +2,52 @@
 (function () {
 
 // ── 0. API config ─────────────────────────────────────────────────────────────
-const IMMORTAL_API = window.IMMORTAL_API || 'http://localhost:3000';
+function apiBase() {
+  return window.IMMORTAL_API || 'http://127.0.0.1:3000';
+}
+const IMMORTAL_PORTAL = window.IMMORTAL_PORTAL || '../dashboard/index.html';
+document.addEventListener('DOMContentLoaded', () => {
+  const portal = document.getElementById('portal-link');
+  if (portal) portal.href = IMMORTAL_PORTAL;
+  paintApiBadge();
+  probeApiHealth();
+});
+
+async function apiFetch(path, opts = {}, timeoutMs = 12000) {
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(`${apiBase()}${path}`, { ...opts, signal: ctrl.signal });
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+function paintApiBadge(state, detail) {
+  let el = document.getElementById('api-badge');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'api-badge';
+    el.className = 'api-badge';
+    document.body.appendChild(el);
+  }
+  el.dataset.state = state || 'pending';
+  el.textContent = detail || (state === 'ok' ? 'API ONLINE' : state === 'down' ? 'API OFFLINE' : 'API …');
+}
+
+async function probeApiHealth() {
+  paintApiBadge('pending', 'API …');
+  try {
+    const res = await apiFetch('/health', {}, 4000);
+    if (!res.ok) throw new Error('bad');
+    const data = await res.json().catch(() => ({}));
+    paintApiBadge('ok', data.version ? `API ${data.version}` : 'API ONLINE');
+    return true;
+  } catch (_) {
+    paintApiBadge('down', 'API OFFLINE');
+    return false;
+  }
+}
 
 // ── Device fingerprint (SHA-256 of browser hardware signals) ─────────────────
 async function getDeviceFingerprint() {
@@ -29,29 +74,146 @@ async function getDeviceFingerprint() {
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// ── Token storage ─────────────────────────────────────────────────────────────
-const Tokens = {
-  save(access, refresh) {
-    localStorage.setItem('immortal_access', access);
-    localStorage.setItem('immortal_refresh', refresh);
-  },
-  access()  { return localStorage.getItem('immortal_access') || ''; },
-  refresh() { return localStorage.getItem('immortal_refresh') || ''; },
-  clear()   { localStorage.removeItem('immortal_access'); localStorage.removeItem('immortal_refresh'); },
-};
+// ── Token storage (sessionStorage preferred; falls back to memory) ────────────
+const Tokens = (function () {
+  const mem = { access: '', refresh: '' };
+  const useSession = !!(window.IMMORTAL_SECURE_STORAGE !== false && window.sessionStorage);
+  return {
+    save(access, refresh) {
+      mem.access = access || '';
+      mem.refresh = refresh || '';
+      try {
+        if (useSession) {
+          sessionStorage.setItem('immortal_access', mem.access);
+          sessionStorage.setItem('immortal_refresh', mem.refresh);
+          localStorage.removeItem('immortal_access');
+          localStorage.removeItem('immortal_refresh');
+        }
+      } catch (_) {}
+    },
+    access() {
+      if (mem.access) return mem.access;
+      try { return (useSession && sessionStorage.getItem('immortal_access')) || ''; }
+      catch { return ''; }
+    },
+    refresh() {
+      if (mem.refresh) return mem.refresh;
+      try { return (useSession && sessionStorage.getItem('immortal_refresh')) || ''; }
+      catch { return ''; }
+    },
+    clear() {
+      mem.access = '';
+      mem.refresh = '';
+      try {
+        sessionStorage.removeItem('immortal_access');
+        sessionStorage.removeItem('immortal_refresh');
+        localStorage.removeItem('immortal_access');
+        localStorage.removeItem('immortal_refresh');
+      } catch (_) {}
+    },
+  };
+})();
 
-// ── 1. Native bridge ──────────────────────────────────────────────────────────
-const isNative = !!(window.chrome && window.chrome.webview);
-function nativeSend(obj) {
-  if (isNative) window.chrome.webview.postMessage(JSON.stringify(obj));
+async function collectBrowserHardwareInfo() {
+  return {
+    processorName: navigator.userAgent.slice(0, 200),
+    totalMemory: (navigator.deviceMemory || 0) * 1024 * 1024 * 1024,
+    screenResolution: `${screen.width}x${screen.height}`,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+    cpuId: String(navigator.hardwareConcurrency || 0),
+    motherboardSerial: '',
+    diskSerial: '',
+    biosSerial: '',
+    macAddress: '',
+    systemUuid: '',
+  };
 }
 
-// C++ → JS entry point
+let _hbTimer = null;
+function startClientHeartbeat() {
+  stopClientHeartbeat();
+  _hbTimer = setInterval(async () => {
+    const tok = Tokens.access();
+    if (!tok) return;
+    try {
+      const res = await apiFetch('/api/auth/heartbeat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${tok}`,
+        },
+        body: JSON.stringify({ sessionCheck: true }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data.status === 'REVOKED') {
+        Tokens.clear();
+        nativeSend({ action: 'sessionRevoked' });
+        showScreen('login');
+      }
+    } catch (_) {}
+  }, 60000);
+}
+function stopClientHeartbeat() {
+  if (_hbTimer) clearInterval(_hbTimer);
+  _hbTimer = null;
+}
+
+// ── 1. Native WebView2 bridge ─────────────────────────────────────────────────
+const isNative = !!(window.chrome && window.chrome.webview);
+document.body.classList.remove('is-webview-pending');
+document.body.classList.add(isNative ? 'is-webview' : 'is-browser');
+
+function nativeSend(obj) {
+  if (!isNative || !obj) return;
+  try {
+    window.chrome.webview.postMessage(typeof obj === 'string' ? obj : JSON.stringify(obj));
+  } catch (_) {}
+}
+
+function parseHostMessage(raw) {
+  if (raw == null) return null;
+  if (typeof raw === 'object') return raw;
+  if (typeof raw !== 'string') return null;
+  try { return JSON.parse(raw); } catch (_) { return null; }
+}
+
+function bindWebViewBridge() {
+  if (!isNative) return;
+  const wv = window.chrome.webview;
+  wv.addEventListener('message', (ev) => {
+    const msg = parseHostMessage(ev.data);
+    if (msg && msg.action) window.handleNativeMessage(msg);
+  });
+  // Some hosts deliver via document — keep both
+  window.addEventListener('message', (ev) => {
+    if (!ev || ev.source !== window) return;
+    const msg = parseHostMessage(ev.data);
+    if (msg && msg.action) window.handleNativeMessage(msg);
+  });
+  nativeSend({ action: 'uiReady', version: '2.2' });
+}
+
+// C++ → JS entry point (also callable from injected host scripts)
 window.handleNativeMessage = function (msg) {
+  if (!msg || !msg.action) return;
   switch (msg.action) {
     case 'prefillKey':
-      keyInput.value = msg.key;
-      keyInput.focus();
+      {
+        const el = document.getElementById('key-input');
+        if (el) {
+          el.value = formatLicenseKey(msg.key || '');
+          focusKeyField(true);
+        }
+      }
+      break;
+    case 'focusKey':
+      focusKeyField(true);
+      break;
+    case 'setApi':
+      if (msg.url) {
+        window.IMMORTAL_API = String(msg.url);
+        probeApiHealth();
+      }
       break;
     case 'authOk':        onAuthOk(msg);        break;
     case 'authFail':      onAuthFail(msg);       break;
@@ -66,6 +228,23 @@ window.handleNativeMessage = function (msg) {
     case 'emuLog':        onEmuLog(msg);         break;
   }
 };
+
+bindWebViewBridge();
+
+function focusKeyField(selectAll) {
+  const el = document.getElementById('key-input');
+  if (!el) return;
+  try {
+    el.focus({ preventScroll: true });
+    if (selectAll) el.select();
+    else {
+      const n = el.value.length;
+      el.setSelectionRange(n, n);
+    }
+  } catch (_) {
+    try { el.focus(); } catch (__) {}
+  }
+}
 
 // ── 2. Starfield canvas — parallax deep sky, drifting through Saturn orbit ────
 // Perf contract: the sky is split into one STATIC layer (nebula + the faint
@@ -520,11 +699,18 @@ setTimeout(() => {
   } else {
     dismissLoader();
     showScreen('login');
+    setTimeout(() => focusKeyField(false), 100);
   }
 }, 2800);
 
 // Pulse loader status
-const statusLabels = ['Initializing secure channel..', 'Verifying system integrity..', 'Connecting to Immortal servers..', 'Ready..'];
+const statusLabels = [
+  'Opening secure channel..',
+  'Handshake with control plane..',
+  'Binding session keys..',
+  'Integrity sweep..',
+  'Ready.',
+];
 let sli = 0;
 const statusInterval = setInterval(() => {
   sli = Math.min(sli + 1, statusLabels.length - 1);
@@ -585,8 +771,18 @@ function updateCardAccess(products) {
   applyLock(document.getElementById('spoof-card'), owned.has('spoofer'));
 }
 
+function humanAuthError(raw) {
+  const e = String(raw || '').toLowerCase();
+  if (e.includes('rate') || e.includes('too many')) return 'Too many tries. Wait a minute, then try again.';
+  if (e.includes('license')) return 'That license key is invalid or expired.';
+  if (e.includes('device')) return 'This device is not allowed for that license.';
+  if (e.includes('network') || e.includes('fetch')) return 'Cannot reach Immortal API. Check your connection.';
+  if (e.includes('replay') || e.includes('stale')) return 'Login expired. Try again.';
+  return raw || 'Sign-in failed. Check your key and try again.';
+}
+
 function applyAuthFail(msg) {
-  const err = msg.error || 'Authentication failed';
+  const err = humanAuthError(msg.error || msg.message || 'Authentication failed');
   showScreen('login');
   showAuthError(err);
   setAuthBtnLoading(false);
@@ -596,6 +792,56 @@ function applyAuthFail(msg) {
 const authBtn   = document.getElementById('auth-btn');
 const keyInput  = document.getElementById('key-input');
 const authError = document.getElementById('auth-error');
+
+function formatLicenseKey(raw) {
+  const alnum = String(raw || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 20);
+  return alnum.match(/.{1,4}/g)?.join('-') || '';
+}
+
+/** Keep caret stable while inserting dashes (critical in WebView2). */
+function applyKeyFormat(el) {
+  const old = el.value;
+  const sel = el.selectionStart || 0;
+  const rawBefore = old.slice(0, sel).toUpperCase().replace(/[^A-Z0-9]/g, '').length;
+  const formatted = formatLicenseKey(old);
+  if (formatted === old) return;
+  el.value = formatted;
+  let i = 0, seen = 0;
+  while (i < formatted.length && seen < rawBefore) {
+    if (/[A-Z0-9]/.test(formatted[i])) seen++;
+    i++;
+  }
+  try { el.setSelectionRange(i, i); } catch (_) {}
+}
+
+if (keyInput) {
+  keyInput.classList.add('key-masked');
+  try {
+    const last = localStorage.getItem('immortal_last_key') || '';
+    if (last && !keyInput.value) keyInput.value = formatLicenseKey(last);
+  } catch (_) {}
+  keyInput.addEventListener('input', () => applyKeyFormat(keyInput));
+  keyInput.addEventListener('paste', (e) => {
+    e.preventDefault();
+    const text = (e.clipboardData || window.clipboardData).getData('text');
+    keyInput.value = formatLicenseKey(text);
+    try {
+      const n = keyInput.value.length;
+      keyInput.setSelectionRange(n, n);
+    } catch (_) {}
+  });
+  // WebView2 sometimes needs an explicit click-to-focus path
+  keyInput.addEventListener('pointerdown', () => focusKeyField(false));
+}
+
+const keyReveal = document.getElementById('key-reveal');
+if (keyReveal && keyInput) {
+  keyReveal.addEventListener('click', () => {
+    const masked = keyInput.classList.toggle('key-masked');
+    keyReveal.textContent = masked ? '···' : 'ABC';
+    focusKeyField(false);
+  });
+}
 
 function setAuthBtnLoading(on) {
   authBtn.classList.toggle('loading', on);
@@ -613,12 +859,12 @@ function showAuthError(msg) {
 
 async function doLogin() {
   authError.classList.remove('visible');
-  const key = keyInput.value.trim();
+  const key = formatLicenseKey(keyInput.value);
+  keyInput.value = key;
   if (!key) { showAuthError('License key required'); return; }
 
-  // Basic format check: XXXX-XXXX-XXXX-XXXX-XXXX
-  const fmt = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/i;
-  if (!fmt.test(key.replace(/\s/g, ''))) {
+  const fmt = /^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/;
+  if (!fmt.test(key)) {
     showAuthError('Invalid key format');
     return;
   }
@@ -629,17 +875,28 @@ async function doLogin() {
     const fingerprint = await getDeviceFingerprint();
     const nonce       = crypto.randomUUID();
     const timestamp   = Math.floor(Date.now() / 1000);
+    const hardwareInfo = await collectBrowserHardwareInfo();
 
-    const res = await fetch(`${IMMORTAL_API}/api/auth/login/license`, {
+    const online = await probeApiHealth();
+    if (!online) {
+      showAuthError('Cannot reach Immortal API — start the backend then retry');
+      setAuthBtnLoading(false);
+      return;
+    }
+
+    const res = await apiFetch('/api/auth/login/license', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ licenseKey: key, fingerprint, nonce, timestamp }),
+      body: JSON.stringify({ licenseKey: key, fingerprint, nonce, timestamp, hardwareInfo }),
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Authentication failed');
 
     Tokens.save(data.accessToken, data.refreshToken);
+    try { localStorage.setItem('immortal_last_key', key); } catch (_) {}
+    startClientHeartbeat();
+    paintApiBadge('ok', 'API ONLINE');
 
     // Notify C++ host so it can persist the key and start game watch
     nativeSend({
@@ -657,11 +914,13 @@ async function doLogin() {
     });
 
   } catch (err) {
-    const msg = err.message === 'Failed to fetch'
-      ? 'Cannot reach Immortal servers'
+    const msg =
+      err.name === 'AbortError' ? 'Request timed out — try again'
+      : err.message === 'Failed to fetch' ? 'Cannot reach Immortal servers'
       : (err.message || 'Authentication failed');
     showAuthError(msg);
     setAuthBtnLoading(false);
+    paintApiBadge('down', 'API OFFLINE');
     nativeSend({ action: 'authFail', error: msg });
   }
 }

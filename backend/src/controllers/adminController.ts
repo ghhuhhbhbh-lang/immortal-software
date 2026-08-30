@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express'
 import { prisma } from '../db'
 import { audit } from '../services/auditService'

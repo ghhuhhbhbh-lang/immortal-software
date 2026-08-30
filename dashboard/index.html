@@ -1,12 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="gate-locked">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Immortal Software — Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap">
-<style>
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://localhost:3000 http://127.0.0.1:3000 https:; object-src 'none'">
+<link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
+<script src="gate.js"></script>
+<!-- legacy inline styles removed: see styles.css -->
+<style id="legacy-unused" media="not all">
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
@@ -625,11 +631,10 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo-wrap">
-      <div class="login-logo">⚔️</div>
-      <div>
-        <div class="login-brand"><span>IMMORTAL</span> SOFTWARE</div>
-        <div class="login-sub">Admin Dashboard</div>
-      </div>
+      <img class="login-logo-img" src="../Emulator Loader GUI/logo2.png" alt="Immortal" draggable="false"
+           onerror="this.style.display='none'">
+      <div class="login-brand grad-text">IMMORTAL SOFTWARE</div>
+      <div class="login-sub">Secure access system</div>
     </div>
     <div class="login-field">
       <label>Username</label>
@@ -654,10 +659,11 @@ tbody td:first-child { color: var(--text); font-weight: 500; }
 <!-- SIDEBAR -->
 <aside class="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-logo">⚔️</div>
+    <img class="brand-logo-img" src="../Emulator Loader GUI/logo2.png" alt="" draggable="false"
+         onerror="this.style.display='none'">
     <div class="brand-text">
-      <div class="brand-name">IMMORTAL</div>
-      <div class="brand-sub">Admin Panel</div>
+      <div class="brand-name grad-text">IMMORTAL</div>
+      <div class="brand-sub">Software</div>
     </div>
   </div>
 
@@ -742,7 +748,8 @@ const VIEWS = {
 };
 
 // ── State ──────────────────────────────────────────────────
-let API = 'http://localhost:3000';
+let API = (window.IMMORTAL_API || 'http://localhost:3000').replace(/\/$/, '');
+document.getElementById('api-url-input').value = API;
 let accessToken = '';
 let currentView = 'dashboard';
 let cache = {};
@@ -856,14 +863,14 @@ async function updateBadges() {
     const stats = await apiFetch('/api/admin/stats');
     if (!stats) return;
     document.getElementById('nav-badge-lic').textContent = stats.activeLicenses ?? '—';
-    document.getElementById('nav-badge-ev').textContent = stats.recentEvents ?? '—';
+    document.getElementById('nav-badge-ev').textContent = stats.recentEvents ?? stats.recentFailures ?? '—';
   } catch {}
 }
 
 // ── Dashboard View ─────────────────────────────────────────
 async function renderDashboard() {
   const el = document.getElementById('main-content');
-  let stats = { totalUsers: 0, activeLicenses: 0, totalLicenses: 0, recentEvents: 0 };
+  let stats = { totalUsers: 0, activeLicenses: 0, totalLicenses: 0, recentEvents: 0, recentFailures: 0 };
   try { stats = (await apiFetch('/api/admin/stats')) || stats; } catch {}
   updateBadges();
 
@@ -898,7 +905,7 @@ async function renderDashboard() {
         <span class="stat-label">Security Events</span>
         <div class="stat-icon">🛡️</div>
       </div>
-      <div class="stat-value">${fmt(stats.recentEvents)}</div>
+      <div class="stat-value">${fmt(stats.recentEvents ?? stats.recentFailures)}</div>
       <div class="stat-change neutral">Last 24 hours</div>
     </div>
   </div>
@@ -921,7 +928,7 @@ async function renderDashboard() {
 
   // Fetch recent licenses
   try {
-    const lic = await apiFetch('/api/admin/licenses?limit=8');
+    const lic = await apiFetch('/api/licenses?limit=8');
     document.getElementById('dash-lic-table').innerHTML = licenseTable(lic?.licenses || []);
   } catch (e) {
     document.getElementById('dash-lic-table').innerHTML = `<div style="padding:16px;color:var(--text-3)">${e.message}</div>`;
@@ -941,7 +948,7 @@ async function renderLicenses() {
   const el = document.getElementById('main-content');
   el.innerHTML = `<div class="panel"><div class="panel-header"><span class="panel-title">All Licenses</span></div><div class="table-wrap" id="lic-table"><div style="padding:24px;color:var(--text-3)">Loading…</div></div></div>`;
   try {
-    const data = await apiFetch('/api/admin/licenses?limit=50');
+    const data = await apiFetch('/api/licenses?limit=50');
     document.getElementById('lic-table').innerHTML = licenseTable(data?.licenses || [], true);
     attachLicenseActions();
   } catch (e) {
@@ -955,10 +962,10 @@ function licenseTable(licenses, full = false) {
     <tr>
       <td><span style="font-family:monospace;font-size:12px;color:var(--accent)">${l.keyPrefix || '????'}‑••••‑••••‑••••‑••••</span></td>
       <td><span class="badge badge-${statusColor(l.status)}">${l.status}</span></td>
-      <td>${l.product?.name || '—'}</td>
-      <td>${l.plan?.name || '—'}</td>
+      <td>${(typeof l.product === 'string' ? l.product : l.product?.name) || '—'}</td>
+      <td>${(typeof l.plan === 'string' ? l.plan : l.plan?.name) || '—'}</td>
       <td>${l.holder?.username || '<span style="color:var(--text-3)">Unbound</span>'}</td>
-      <td>${fmtDate(l.expiresAt)}</td>
+      <td>${fmtDate(l.expiresAt || l.expirationDate)}</td>
       ${full ? `<td><div style="display:flex;gap:6px">
         <button class="btn btn-ghost" style="padding:4px 10px;font-size:11px" data-action="reset-devices" data-id="${l.id}">Reset Devices</button>
         <button class="btn btn-danger" style="padding:4px 10px;font-size:11px" data-action="revoke" data-id="${l.id}">Revoke</button>
@@ -994,7 +1001,10 @@ function attachLicenseActions() {
 async function renderGenerate() {
   const el = document.getElementById('main-content');
   let products = [], plans = [];
-  try { products = (await apiFetch('/api/admin/products'))?.products || []; } catch {}
+  try {
+    const raw = await apiFetch('/api/admin/products');
+    products = Array.isArray(raw) ? raw : (raw?.products || []);
+  } catch {}
 
   el.innerHTML = `
   <div class="panel gen-panel">
@@ -1031,7 +1041,9 @@ async function renderGenerate() {
     if (!pid) { planSel.innerHTML = '<option>Select product first</option>'; planSel.disabled = true; return; }
     planSel.disabled = false;
     try {
-      plans = (await apiFetch('/api/admin/products'))?.products?.find(p => p.id === pid)?.plans || [];
+      const raw = await apiFetch('/api/admin/products');
+      const list = Array.isArray(raw) ? raw : (raw?.products || []);
+      plans = list.find(p => p.id === pid)?.plans || [];
       planSel.innerHTML = plans.map(p => `<option value="${p.id}">${p.name} (${p.durationDays}d)</option>`).join('');
     } catch { planSel.innerHTML = '<option>Error loading plans</option>'; }
   });
@@ -1048,7 +1060,8 @@ async function renderGenerate() {
         method: 'POST',
         body: JSON.stringify({ productId, planId, quantity: Math.min(qty, 50) }),
       });
-      const keys = data?.keys || [];
+      const rawKeys = data?.keys || data?.licenses || [];
+      const keys = rawKeys.map(k => typeof k === 'string' ? k : (k.key || k.licenseKey || '')).filter(Boolean);
       const list = document.getElementById('gen-key-list');
       list.innerHTML = keys.map(k => `
         <div class="key-item">
@@ -1129,7 +1142,7 @@ async function renderProducts() {
   el.innerHTML = `<div class="panel"><div class="panel-header"><span class="panel-title">Products & Plans</span></div><div id="prod-list"><div style="padding:24px;color:var(--text-3)">Loading…</div></div></div>`;
   try {
     const data = await apiFetch('/api/admin/products');
-    const products = data?.products || [];
+    const products = Array.isArray(data) ? data : (data?.products || []);
     if (!products.length) { document.getElementById('prod-list').innerHTML = '<div style="padding:24px;color:var(--text-3)">No products configured</div>'; return; }
     document.getElementById('prod-list').innerHTML = products.map(p => `
       <div style="border-bottom:1px solid var(--border-2);padding:16px 20px">
@@ -1176,9 +1189,9 @@ function eventList(events, full = false) {
   if (!events.length) return '<div style="padding:24px;color:var(--text-3);text-align:center">No events</div>';
   return events.map(e => `
     <div class="event-item">
-      <div class="event-dot" style="background:${EVENT_COLORS[e.type] || 'var(--text-3)'}"></div>
+      <div class="event-dot" style="background:${EVENT_COLORS[e.type || e.eventType] || 'var(--text-3)'}"></div>
       <div class="event-body">
-        <div class="event-msg">${formatEventType(e.type)}${e.user ? ` — <b>${e.user.username}</b>` : ''}</div>
+        <div class="event-msg">${formatEventType(e.type || e.eventType)}${e.user ? ` — <b>${e.user.username}</b>` : ''}</div>
         <div class="event-meta">${fmtDate(e.createdAt, true)}${full && e.metadata ? ' · ' + tryJson(e.metadata) : ''}</div>
       </div>
     </div>`).join('');
@@ -1216,5 +1229,6 @@ if (savedToken) {
     .catch(() => { accessToken = ''; localStorage.removeItem('immortal_admin_token'); });
 }
 </script>
+<script src="unlock.js"></script>
 </body>
 </html>

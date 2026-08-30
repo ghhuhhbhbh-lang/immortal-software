@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}</ProjectGuid>
+    <RootNamespace>ImmortalSecurity</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;DEV_BUILD;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/EHa %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;RELEASE_BUILD;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalOptions>/EHa %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="AntiDebug.h" />
+    <ClInclude Include="AntiDump.h" />
+    <ClInclude Include="AntiInject.h" />
+    <ClInclude Include="AntiTamper.h" />
+    <ClInclude Include="AntiTerminate.h" />
+    <ClInclude Include="AntiVM.h" />
+    <ClInclude Include="CryptoUtils.h" />
+    <ClInclude Include="FakeAuthEngine.h" />
+    <ClInclude Include="IntegrityManager.h" />
+    <ClInclude Include="Security.h" />
+    <ClInclude Include="SecurityPolicy.h" />
+    <ClInclude Include="SessionManager.h" />
+    <ClInclude Include="SecureLocalStore.h" />
+    <ClInclude Include="ThreadManager.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AntiDebug.cpp" />
+    <ClCompile Include="AntiDump.cpp" />
+    <ClCompile Include="AntiInject.cpp" />
+    <ClCompile Include="AntiTamper.cpp" />
+    <ClCompile Include="AntiTerminate.cpp" />
+    <ClCompile Include="AntiVM.cpp" />
+    <ClCompile Include="CryptoUtils.cpp" />
+    <ClCompile Include="FakeAuthEngine.cpp" />
+    <ClCompile Include="IntegrityManager.cpp" />
+    <ClCompile Include="LoaderMain_Integration.cpp" />
+    <ClCompile Include="SecurityPolicy.cpp" />
+    <ClCompile Include="SessionManager.cpp" />
+    <ClCompile Include="SecureLocalStore.cpp" />
+    <ClCompile Include="ThreadManager.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

@@ -1,0 +1,42 @@
+name: Deploy portal
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'dashboard/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stage portal
+        run: |
+          mkdir -p _site
+          cp -R dashboard/. _site/
+          if [ -d "Emulator Loader GUI" ]; then
+            mkdir -p "_site/Emulator Loader GUI"
+            cp "Emulator Loader GUI/logo2.png" "_site/Emulator Loader GUI/" 2>/dev/null || true
+            cp "Emulator Loader GUI/bg.png" "_site/Emulator Loader GUI/" 2>/dev/null || true
+          fi
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4

@@ -22,7 +22,8 @@ export function requireAuth(minRole?: string) {
       next()
     } catch (err: unknown) {
       if (err && typeof err === 'object' && 'statusCode' in err) {
-        res.status((err as { statusCode: number }).statusCode).json({ error: (err as { message: string }).message })
+        const e = err as { statusCode: number; message?: string }
+        res.status(e.statusCode).json({ error: e.message || 'Unauthorized' })
       } else {
         res.status(401).json({ error: 'Unauthorized' })
       }

@@ -4,25 +4,29 @@
 
 namespace AntiDebug {
 
-// Returns true if a debugger is detected (any method)
+void Init();
+void StopMonitoring();
+
 bool IsDebuggerAttached();
-
-// Hardware breakpoint scan: checks Dr0-Dr3 on all threads
 bool HardwareBreakpointsSet();
-
-// RDTSC timing: returns true if slowdown detected (emulator/single-step)
 bool TimingAnomalyDetected();
-
-// NtQueryInformationProcess triple-check
 bool NtDebugChecks();
-
-// Check if parent process is a trusted launcher (explorer.exe, service host)
+bool NtDebugChecksAdvanced();
 bool ParentIsSuspicious();
+bool HypervisorDetected();
+bool DebuggerProcessesRunning();
+bool MemoryProtectionBypassed();
+bool KernelDebuggerPresent();
+bool PebBeingDebugged();
+bool NtGlobalFlagSet();
+bool HeapFlagsSuspicious();
+bool CloseHandleExceptionTrick();
+bool OutputDebugStringCaught();
 
 // Combined score: 0 = clean, higher = more suspicious
 uint32_t DebugScore();
 
-// Initialize: snapshots baseline timing
-void Init();
+// Soft anti-attach: hide thread from debugger (irreversible for that thread)
+void HideCurrentThread();
 
 } // namespace AntiDebug

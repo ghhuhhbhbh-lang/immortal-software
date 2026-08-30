@@ -47,3 +47,23 @@ export async function validateLicense(lic: Awaited<ReturnType<typeof findLicense
   if (lic.status !== 'ACTIVE') throw new AppError(403, `License ${lic.status.toLowerCase()}`, 'LICENSE_INVALID')
   if (lic.expiresAt && lic.expiresAt < new Date()) throw new AppError(403, 'License expired', 'LICENSE_INVALID')
 }
+
+export const validateLicenseStatus = validateLicense
+
+export async function suspendLicense(id: string) {
+  return prisma.license.update({ where: { id }, data: { status: 'SUSPENDED' } })
+}
+
+export async function revokeLicense(id: string) {
+  return prisma.license.update({ where: { id }, data: { status: 'REVOKED' } })
+}
+
+export async function extendLicense(id: string, extraDays: number) {
+  const lic = await prisma.license.findUnique({ where: { id } })
+  if (!lic) throw new AppError(404, 'License not found')
+  const base = lic.expiresAt && lic.expiresAt > new Date() ? lic.expiresAt : new Date()
+  return prisma.license.update({
+    where: { id },
+    data: { expiresAt: new Date(base.getTime() + extraDays * 86400000), status: 'ACTIVE' },
+  })
+}

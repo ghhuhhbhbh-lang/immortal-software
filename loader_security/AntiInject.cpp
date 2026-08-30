@@ -1,9 +1,12 @@
 #include "AntiInject.h"
+#include "CryptoUtils.h"
+#include "Security.h"
 #include <thread>
 #include <atomic>
 #include <string>
 #include <vector>
 #include <functional>
+#include <cstring>
 
 namespace AntiInject {
 
@@ -61,9 +64,16 @@ uint32_t ScanAllCritical() {
         { L"ntdll.dll",    "NtAllocateVirtualMemory" },
         { L"ntdll.dll",    "NtProtectVirtualMemory" },
         { L"ntdll.dll",    "NtWriteVirtualMemory" },
+        { L"ntdll.dll",    "NtMapViewOfSection" },
+        { L"ntdll.dll",    "NtQueueApcThread" },
+        { L"ntdll.dll",    "LdrLoadDll" },
         { L"kernel32.dll", "VirtualProtect"     },
+        { L"kernel32.dll", "VirtualAlloc"       },
         { L"kernel32.dll", "LoadLibraryA"       },
+        { L"kernel32.dll", "LoadLibraryW"       },
         { L"kernel32.dll", "CreateRemoteThread" },
+        { L"kernel32.dll", "WriteProcessMemory" },
+        { L"kernel32.dll", "OpenProcess" },
         { nullptr, nullptr }
     };
 
@@ -78,12 +88,17 @@ uint32_t ScanAllCritical() {
 }
 
 void StartHookScanner() {
-    g_scanRunning = true;
+    if (g_scanRunning.exchange(true)) return;
+    if (!g_onHookDetected) {
+        g_onHookDetected = []() {
+            Policy::HandleThreat({ "HOOK", "Critical API inline hook detected", 8 });
+        };
+    }
     std::thread([]() {
         while (g_scanRunning) {
             uint32_t hooked = ScanAllCritical();
             if (hooked > 0 && g_onHookDetected) g_onHookDetected();
-            for (int i = 0; i < 30 && g_scanRunning; i++)
+            for (int i = 0; i < 20 && g_scanRunning; i++)
                 Sleep(1000);
         }
     }).detach();
@@ -92,8 +107,10 @@ void StartHookScanner() {
 void StopHookScanner() { g_scanRunning = false; }
 
 bool SetGuardPage(void* buf, size_t size) {
-    DWORD old;
-    return VirtualProtect(buf, size, PAGE_NOACCESS | PAGE_GUARD, &old) != 0;
+    if (!buf || size == 0) return false;
+    DWORD old = 0;
+    // PAGE_GUARD must combine with a valid page type (not NOACCESS alone)
+    return VirtualProtect(buf, size, PAGE_READONLY | PAGE_GUARD, &old) != 0;
 }
 
 void* AllocExecutable(const void* code, size_t size) {

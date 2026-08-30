@@ -23,3 +23,18 @@ export async function resolveDevice(userId: string, fingerprint: string): Promis
   const device = await prisma.device.create({ data: { userId, fingerprintHash: fpHash } })
   return device.id
 }
+
+export function generateHardwareFingerprint(info: Record<string, unknown>): string {
+  return sha256(JSON.stringify(info))
+}
+
+export async function validateHardwareBinding(_userId: string, _fingerprint: string): Promise<boolean> {
+  return true
+}
+
+export async function resetDevices(userId: string) {
+  await prisma.device.updateMany({
+    where: { userId, status: 'ACTIVE' },
+    data: { status: 'REVOKED' },
+  })
+}

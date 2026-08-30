@@ -1,4 +1,8 @@
 #include "CryptoUtils.h"
+#include <windows.h>
+#include <algorithm>
+#include <vector>
+#include <cstring>
 #include <stdexcept>
 
 namespace Crypto {
@@ -58,13 +62,29 @@ bool VerifyHMACFooter(const void* buf, size_t totalLen, const void* key, size_t 
 }
 
 std::array<uint8_t,32> DeriveKeyFromPE(const char* salt, size_t saltLen) {
-    auto* base = reinterpret_cast<const IMAGE_DOS_HEADER*>(GetModuleHandleW(nullptr));
-    auto* nt   = reinterpret_cast<const IMAGE_NT_HEADERS*>(
-        reinterpret_cast<const uint8_t*>(base) + base->e_lfanew);
-    uint32_t checksum = nt->OptionalHeader.CheckSum;
-    std::vector<uint8_t> material(4 + saltLen);
-    memcpy(material.data(), &checksum, 4);
-    memcpy(material.data() + 4, salt, saltLen);
+    auto* base = reinterpret_cast<const uint8_t*>(GetModuleHandleW(nullptr));
+    auto* dos  = reinterpret_cast<const IMAGE_DOS_HEADER*>(base);
+    auto* nt   = reinterpret_cast<const IMAGE_NT_HEADERS*>(base + dos->e_lfanew);
+
+    // Mix: TimeDateStamp + SizeOfImage + entry RVA + salt (CheckSum is often 0 unsigned)
+    uint32_t stamp = nt->FileHeader.TimeDateStamp;
+    uint32_t img   = nt->OptionalHeader.SizeOfImage;
+    uint32_t entry = nt->OptionalHeader.AddressOfEntryPoint;
+    std::vector<uint8_t> material(12 + saltLen + 16);
+    memcpy(material.data() + 0, &stamp, 4);
+    memcpy(material.data() + 4, &img, 4);
+    memcpy(material.data() + 8, &entry, 4);
+    memcpy(material.data() + 12, salt, saltLen);
+
+    // First 16 bytes of .text if present
+    auto* sec = IMAGE_FIRST_SECTION(nt);
+    for (WORD i = 0; i < nt->FileHeader.NumberOfSections; ++i, ++sec) {
+        if (_strnicmp(reinterpret_cast<const char*>(sec->Name), ".text", 5) == 0) {
+            SIZE_T n = (std::min<SIZE_T>)(16, sec->Misc.VirtualSize);
+            memcpy(material.data() + 12 + saltLen, base + sec->VirtualAddress, n);
+            break;
+        }
+    }
     return SHA256(material.data(), material.size());
 }
 

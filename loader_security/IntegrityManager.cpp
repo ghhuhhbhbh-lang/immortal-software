@@ -4,11 +4,18 @@
 #include <string>
 #include <thread>
 #include <atomic>
+#include <softpub.h>
+#include <wintrust.h>
+
+#pragma comment(lib, "wintrust.lib")
+#pragma comment(lib, "crypt32.lib")
 
 namespace Integrity {
 
 static std::vector<SectionHash> g_baseline;
 static std::array<uint8_t,32>   g_configKey{};
+static std::array<uint8_t,32>   g_diskHash{};
+static bool                      g_diskReady = false;
 static std::wstring              g_watchDir;
 static std::atomic<bool>         g_configTampered{ false };
 
@@ -33,18 +40,15 @@ static bool HashSection(const char* name, SectionHash& out) {
 
 bool Initialize() {
     g_baseline.clear();
-    // Derive HMAC key from PE checksum
-    static const char salt[] = "integrity-key-v1";
+    static const char salt[] = "integrity-key-v2";
     g_configKey = Crypto::DeriveKeyFromPE(salt, sizeof(salt) - 1);
 
     static const char* sections[] = { ".text", ".rdata", ".pdata", nullptr };
     for (int i = 0; sections[i]; i++) {
         SectionHash sh{};
-        if (HashSection(sections[i], sh)) {
-            g_baseline.push_back(sh);
-        }
-        // .pdata may not exist on all builds — skip gracefully
+        if (HashSection(sections[i], sh)) g_baseline.push_back(sh);
     }
+    InitializeDiskImage();
     return !g_baseline.empty();
 }
 
@@ -56,6 +60,68 @@ bool Verify() {
         if (current.hash != base.hash) return false;
     }
     return true;
+}
+
+bool InitializeDiskImage() {
+    wchar_t path[MAX_PATH]{};
+    if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) return false;
+    HANDLE h = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE) return false;
+    DWORD sz = GetFileSize(h, nullptr);
+    if (sz == INVALID_FILE_SIZE || sz == 0 || sz > 64 * 1024 * 1024) {
+        CloseHandle(h);
+        return false;
+    }
+    std::vector<uint8_t> buf(sz);
+    DWORD rd = 0;
+    BOOL ok = ReadFile(h, buf.data(), sz, &rd, nullptr);
+    CloseHandle(h);
+    if (!ok || rd != sz) return false;
+    g_diskHash = Crypto::SHA256(buf.data(), buf.size());
+    g_diskReady = true;
+    return true;
+}
+
+bool VerifyDiskImage() {
+    if (!g_diskReady) return false;
+    wchar_t path[MAX_PATH]{};
+    if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) return false;
+    HANDLE h = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr,
+        OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    if (h == INVALID_HANDLE_VALUE) return false;
+    DWORD sz = GetFileSize(h, nullptr);
+    if (sz == INVALID_FILE_SIZE || sz == 0) { CloseHandle(h); return false; }
+    std::vector<uint8_t> buf(sz);
+    DWORD rd = 0;
+    BOOL ok = ReadFile(h, buf.data(), sz, &rd, nullptr);
+    CloseHandle(h);
+    if (!ok || rd != sz) return false;
+    return Crypto::SHA256(buf.data(), buf.size()) == g_diskHash;
+}
+
+bool VerifyCodeSignature() {
+    wchar_t path[MAX_PATH]{};
+    if (!GetModuleFileNameW(nullptr, path, MAX_PATH)) return false;
+
+    WINTRUST_FILE_INFO fileInfo{};
+    fileInfo.cbStruct = sizeof(fileInfo);
+    fileInfo.pcwszFilePath = path;
+
+    GUID action = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+    WINTRUST_DATA data{};
+    data.cbStruct = sizeof(data);
+    data.dwUIChoice = WTD_UI_NONE;
+    data.fdwRevocationChecks = WTD_REVOKE_NONE;
+    data.dwUnionChoice = WTD_CHOICE_FILE;
+    data.pFile = &fileInfo;
+    data.dwStateAction = WTD_STATEACTION_VERIFY;
+    data.dwProvFlags = WTD_CACHE_ONLY_URL_RETRIEVAL;
+
+    LONG status = WinVerifyTrust(nullptr, &action, &data);
+    data.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(nullptr, &action, &data);
+    return status == ERROR_SUCCESS;
 }
 
 bool SignConfigBuffer(const void* data, size_t dataLen, void* outBuf, size_t& outLen) {
@@ -108,10 +174,41 @@ void WatchConfigDir(const wchar_t* path) {
 }
 
 bool ValidateWatchedConfigs() {
-    // Re-verification would enumerate config files in g_watchDir and check each HMAC.
-    // Returns false if any config fails — caller enters lockdown.
+    if (g_watchDir.empty()) return true;
+    if (!g_configTampered.load()) return true;
+
+    WIN32_FIND_DATAW fd{};
+    std::wstring pattern = g_watchDir + L"\\*.cfg";
+    HANDLE h = FindFirstFileW(pattern.c_str(), &fd);
+    if (h == INVALID_HANDLE_VALUE) {
+        g_configTampered = false;
+        return true; // no configs yet
+    }
+    bool ok = true;
+    do {
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) continue;
+        std::wstring path = g_watchDir + L"\\" + fd.cFileName;
+        HANDLE hf = CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ, nullptr,
+            OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+        if (hf == INVALID_HANDLE_VALUE) { ok = false; break; }
+        DWORD sz = GetFileSize(hf, nullptr);
+        if (sz == INVALID_FILE_SIZE || sz < 32 || sz > 1 << 20) {
+            CloseHandle(hf);
+            ok = false;
+            break;
+        }
+        std::vector<uint8_t> buf(sz);
+        DWORD rd = 0;
+        BOOL readOk = ReadFile(hf, buf.data(), sz, &rd, nullptr);
+        CloseHandle(hf);
+        if (!readOk || rd != sz || !VerifyConfigBuffer(buf.data(), buf.size())) {
+            ok = false;
+            break;
+        }
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
     g_configTampered = false;
-    return true; // Placeholder: real impl reads each .cfg and calls VerifyConfigBuffer
+    return ok;
 }
 
 } // namespace Integrity
