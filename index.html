@@ -7,8 +7,8 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:* https:; object-src 'none'">
-<link rel="stylesheet" href="styles.css">
-<script src="config.js"></script>
+<link rel="stylesheet" href="styles.css?v=2.4.2">
+<script src="config.js?v=2.4.2"></script>
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -16,7 +16,7 @@
 
   <div id="gate" class="gate">
     <div class="gate-card">
-      <div class="clearance">MAX CLEARANCE · LIVE API SEAL · LOADER-BOUND KEYS</div>
+      <div class="login-clearance" style="text-align:center;font-size:9px;letter-spacing:.28em;color:#c77dff;margin-bottom:14px">MAX CLEARANCE · SEALED CHANNEL · LOADER-BOUND</div>
       <div class="brand-block">
         <img src="logo2.png" alt="" width="56" height="56" onerror="this.style.display='none'">
         <div class="brand-name">IMMORTAL</div>
@@ -31,6 +31,7 @@
         <div><span>LOCK</span><code id="g-lock">0 / 5</code></div>
         <div><span>CHANNEL</span><code id="g-api-state">SEALED</code></div>
       </div>
+      <!-- API endpoint is sealed in config.js — never shown -->
       <label class="field">
         <span>USR</span>
         <input id="g-user" type="text" autocomplete="username" autofocus placeholder="operator">
@@ -45,7 +46,7 @@
       </div>
       <button type="button" class="btn primary wide" id="g-go">AUTHENTICATE</button>
       <p class="err" id="g-err"></p>
-      <p class="foot">API channel is sealed (Loader-matched). Soft lock after 5 fails.</p>
+      <p class="foot">Sealed API channel (Loader-matched) · Soft lock after 5 fails</p>
     </div>
   </div>
 
@@ -172,6 +173,6 @@
     </main>
   </div>
 
-  <script src="app.js"></script>
+  <script src="app.js?v=2.4.2"></script>
 </body>
 </html>
