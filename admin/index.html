@@ -32,7 +32,7 @@
     </div>
     <button class="login-btn" id="login-submit">ENTER DASHBOARD</button>
     <div class="login-err" id="login-err"></div>
-    <input type="hidden" id="api-url-input" value="https://skins-acknowledge-contractors-basic.trycloudflare.com">
+    <input type="hidden" id="api-url-input" value="https://reads-waiting-offices-itunes.trycloudflare.com">
   </div>
 </div>
 
@@ -110,8 +110,8 @@ function defaultApiBase() {
   const fromCfg = String(window.IMMORTAL_API || '').replace(/\/$/, '');
   if (fromCfg) return fromCfg;
   const h = location.hostname;
-  if (h === 'localhost' || h === '127.0.0.1') return 'https://skins-acknowledge-contractors-basic.trycloudflare.com';
-  return 'https://skins-acknowledge-contractors-basic.trycloudflare.com';
+  if (h === 'localhost' || h === '127.0.0.1') return 'https://reads-waiting-offices-itunes.trycloudflare.com';
+  return 'https://reads-waiting-offices-itunes.trycloudflare.com';
 }
 function normalizeApiBase(raw) {
   let v = String(raw || '').trim().replace(/\/$/, '');
