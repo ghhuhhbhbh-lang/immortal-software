@@ -3,12 +3,82 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Immortal Software</title>
-<meta http-equiv="refresh" content="0; url=loader/">
-<script>location.replace(new URL('loader/', location.href).href);</script>
+<title>Immortal — Key Manager</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="stylesheet" href="styles.css">
 </head>
-<body style="background:#050508;color:#cfc8ff;font-family:sans-serif;padding:40px;text-align:center">
-  <p>Opening Immortal…</p>
-  <p><a href="loader/" style="color:#a78bfa">Continue</a></p>
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="brand">
+      <img src="logo2.png" alt="" width="36" height="36" onerror="this.style.display='none'">
+      <div>
+        <div class="brand-name">IMMORTAL</div>
+        <div class="brand-sub">Key Manager</div>
+      </div>
+    </div>
+    <div class="top-meta" id="key-count">0 keys</div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel gen">
+      <h1>Generate keys</h1>
+      <p class="hint">Keys stay in this browser only. No server.</p>
+
+      <div class="row">
+        <label>
+          <span>Count</span>
+          <input id="gen-count" type="number" min="1" max="50" value="1">
+        </label>
+        <label>
+          <span>Duration</span>
+          <select id="gen-days">
+            <option value="1">1 day</option>
+            <option value="7">7 days</option>
+            <option value="30" selected>30 days</option>
+            <option value="90">90 days</option>
+            <option value="365">1 year</option>
+            <option value="0">Lifetime</option>
+          </select>
+        </label>
+        <label class="grow">
+          <span>Note</span>
+          <input id="gen-note" type="text" maxlength="64" placeholder="optional">
+        </label>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn primary" id="btn-gen">Generate</button>
+        <button type="button" class="btn ghost" id="btn-export">Export JSON</button>
+        <button type="button" class="btn danger" id="btn-clear">Clear all</button>
+      </div>
+      <p class="flash" id="flash" hidden></p>
+    </section>
+
+    <section class="panel list">
+      <div class="list-head">
+        <h2>Keys</h2>
+        <input id="search" type="search" placeholder="Search key or note…">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>Duration</th>
+              <th>Note</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <p class="empty" id="empty">No keys yet — generate one above.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
 </body>
 </html>
