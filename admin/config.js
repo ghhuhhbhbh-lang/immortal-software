@@ -1,3 +1,3 @@
 ﻿(function (w) {
-  w.IMMORTAL_API = 'https://liquid-workflow-surgical-liz.trycloudflare.com';
+  w.IMMORTAL_API = 'https://skins-acknowledge-contractors-basic.trycloudflare.com';
 })(window);
