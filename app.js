@@ -34,6 +34,8 @@
     tbody: document.getElementById('tbody'),
     empty: document.getElementById('empty'),
     search: document.getElementById('search'),
+    statusFilter: document.getElementById('status-filter'),
+    purge: document.getElementById('btn-purge'),
     keyCount: document.getElementById('key-count'),
     apiChip: document.getElementById('api-chip'),
     presets: document.getElementById('presets'),
@@ -251,7 +253,7 @@
   }
 
   async function loadLicenses() {
-    const data = await apiFetch('/api/licenses?limit=100');
+    const data = await apiFetch('/api/licenses?limit=200');
     licenses = data.licenses || [];
     render();
   }
@@ -299,17 +301,21 @@
 
   function render() {
     const q = (el.search.value || '').trim().toLowerCase();
+    const st = (el.statusFilter?.value || '').trim().toUpperCase();
     const list = licenses.filter((l) => {
+      if (st && String(l.status || '').toUpperCase() !== st) return false;
       if (!q) return true;
       return String(l.keyPrefix || '').toLowerCase().includes(q)
         || String(l.status || '').toLowerCase().includes(q)
-        || String(l.product || '').toLowerCase().includes(q);
+        || String(l.product || '').toLowerCase().includes(q)
+        || String(l.note || '').toLowerCase().includes(q);
     });
     el.keyCount.textContent = `${licenses.length} key${licenses.length === 1 ? '' : 's'}`;
     el.tbody.innerHTML = '';
     el.empty.hidden = list.length > 0;
     for (const l of list) {
       const tr = document.createElement('tr');
+      const revoked = String(l.status || '').toUpperCase() === 'REVOKED';
       tr.innerHTML = `
         <td class="key">${escapeHtml(l.keyPrefix || '????')}‑••••‑••••‑••••‑••••</td>
         <td>${escapeHtml(l.status || '—')}</td>
@@ -320,7 +326,10 @@
         <td>${l.deviceLimit ?? 1}</td>
         <td class="ops">
           <button type="button" class="btn tiny ghost" data-extend="${l.id}">+Days</button>
-          <button type="button" class="btn tiny danger" data-revoke="${l.id}">Revoke</button>
+          ${revoked
+            ? `<button type="button" class="btn tiny ghost" data-unrevoke="${l.id}">Unrevoke</button>`
+            : `<button type="button" class="btn tiny danger" data-revoke="${l.id}">Revoke</button>`}
+          <button type="button" class="btn tiny danger" data-delete="${l.id}">Delete</button>
         </td>`;
       el.tbody.appendChild(tr);
     }
@@ -442,6 +451,16 @@
   });
 
   el.search.addEventListener('input', render);
+  el.statusFilter?.addEventListener('change', render);
+  el.purge?.addEventListener('click', async () => {
+    const n = licenses.filter((l) => String(l.status).toUpperCase() === 'REVOKED').length;
+    if (!confirm(`Hard-delete all REVOKED keys? (${n} currently)`)) return;
+    try {
+      const r = await apiFetch('/api/licenses/purge-revoked', { method: 'POST' });
+      await loadLicenses();
+      flash(`Purged ${r?.data?.deleted ?? 0} keys`);
+    } catch (err) { flash(err.message, true); }
+  });
 
   el.forgedList.addEventListener('click', async (e) => {
     const btn = e.target.closest('[data-copy]');
@@ -475,6 +494,21 @@
         await apiFetch(`/api/licenses/${btn.dataset.revoke}/revoke`, { method: 'POST' });
         await loadLicenses();
         flash('Revoked');
+      } catch (err) { flash(err.message, true); }
+    }
+    if (btn.dataset.unrevoke) {
+      try {
+        await apiFetch(`/api/licenses/${btn.dataset.unrevoke}/unrevoke`, { method: 'POST' });
+        await loadLicenses();
+        flash('Unrevoked — ready for Loader');
+      } catch (err) { flash(err.message, true); }
+    }
+    if (btn.dataset.delete) {
+      if (!confirm('Permanently DELETE this key from the vault?')) return;
+      try {
+        await apiFetch(`/api/licenses/${btn.dataset.delete}`, { method: 'DELETE' });
+        await loadLicenses();
+        flash('Deleted');
       } catch (err) { flash(err.message, true); }
     }
   });

@@ -1,12 +1,17 @@
-/* Immortal Key Manager — sealed API channel (not user-editable) */
+/* Immortal Key Manager — sealed API channel (same authority as Loader) */
 (function (w) {
-  // Same authority as Loader config — do not expose an endpoint field in UI.
   var sealed = ['h','t','t','p',':','/','/','1','2','7','.','0','.','0','.','1',':','3','0','0','0'].join('');
-  Object.defineProperty(w, 'IMMORTAL_API', {
-    value: sealed,
-    writable: false,
-    configurable: false,
-    enumerable: false,
-  });
-  w.IMMORTAL_KM = '2.4.0';
+  try {
+    Object.defineProperty(w, 'IMMORTAL_API', {
+      value: sealed,
+      writable: false,
+      configurable: false,
+      enumerable: false,
+    });
+  } catch (_) {
+    w.IMMORTAL_API = sealed;
+  }
+  w.IMMORTAL_PRODUCT_SLUG = 'immortal-private';
+  w.IMMORTAL_CLIENT = 'key-manager';
+  w.IMMORTAL_KM = '2.5.1';
 })(window);

@@ -7,8 +7,8 @@
 <meta name="robots" content="noindex, nofollow, noarchive">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:* https:; object-src 'none'">
-<link rel="stylesheet" href="styles.css?v=2.4.2">
-<script src="config.js?v=2.4.2"></script>
+<link rel="stylesheet" href="styles.css?v=2.5.1">
+<script src="config.js?v=2.5.1"></script>
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -149,7 +149,17 @@
       <section class="panel list">
         <div class="list-head">
           <h2>Live vault</h2>
-          <input id="search" type="search" placeholder="Search prefix / status…">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="status-filter" title="Filter status">
+              <option value="">All</option>
+              <option value="UNUSED">UNUSED</option>
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="REVOKED">REVOKED</option>
+              <option value="EXPIRED">EXPIRED</option>
+            </select>
+            <input id="search" type="search" placeholder="Search prefix / status…">
+            <button type="button" class="btn tiny ghost" id="btn-purge" title="Hard-delete all REVOKED">Purge revoked</button>
+          </div>
         </div>
         <div class="table-wrap">
           <table>
@@ -173,6 +183,6 @@
     </main>
   </div>
 
-  <script src="app.js?v=2.4.2"></script>
+  <script src="app.js?v=2.5.1"></script>
 </body>
 </html>
