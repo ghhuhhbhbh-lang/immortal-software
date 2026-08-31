@@ -126,7 +126,7 @@ function normalizeApiBase(raw) {
     }
     return v;
   } catch {
-    throw new Error('API Endpoint invalid â€” use http://127.0.0.1:3000');
+    throw new Error('API Endpoint invalid');
   }
 }
 let API = defaultApiBase();
@@ -135,7 +135,7 @@ let accessToken = '';
 let currentView = 'dashboard';
 let cache = {};
 
-// â”€â”€ Auth helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Auth helpers
 async function apiFetch(path, opts = {}) {
   const r = await fetch(API + path, {
     ...opts,
@@ -149,13 +149,13 @@ async function apiFetch(path, opts = {}) {
   const text = await r.text();
   let data = {};
   try { data = text ? JSON.parse(text) : {}; } catch {
-    throw new Error('API returned HTML â€” wrong endpoint (need http://127.0.0.1:3000)');
+    throw new Error('API returned an unexpected response');
   }
   if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`);
   return data;
 }
 
-// â”€â”€ Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Login — username + password only
 document.getElementById('login-submit').addEventListener('click', async () => {
   const btn = document.getElementById('login-submit');
   const err = document.getElementById('login-err');
@@ -170,18 +170,25 @@ document.getElementById('login-submit').addEventListener('click', async () => {
     err.textContent = e.message;
     return;
   }
-  btn.textContent = 'CONNECTINGâ€¦'; btn.disabled = true;
+  btn.textContent = 'CONNECTING…'; btn.disabled = true;
   try {
-    const r = await fetch(`${API}/api/auth/admin-login`, {
+    const fp = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const r = await fetch(`${API}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: user, password: pass }),
+      body: JSON.stringify({
+        username: user,
+        password: pass,
+        fingerprint: fp,
+        nonce: crypto.randomUUID(),
+        timestamp: Math.floor(Date.now() / 1000),
+      }),
     });
     const text = await r.text();
     let data = {};
     try { data = text ? JSON.parse(text) : {}; }
     catch {
-      throw new Error('API returned HTML â€” set API Endpoint to http://127.0.0.1:3000');
+      throw new Error('API returned an unexpected response');
     }
     if (!r.ok || !data.accessToken) throw new Error(data.error || 'Login failed');
     accessToken = data.accessToken;
@@ -189,7 +196,7 @@ document.getElementById('login-submit').addEventListener('click', async () => {
     bootDashboard(user, data.role || 'ADMIN');
   } catch (e) {
     err.textContent = e.message === 'Failed to fetch'
-      ? 'Cannot reach API â€” start backend on :3000 and use http://127.0.0.1:3000'
+      ? 'Cannot reach server — try again'
       : e.message;
     btn.textContent = 'ENTER DASHBOARD'; btn.disabled = false;
   }
