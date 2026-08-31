@@ -27,6 +27,7 @@
     customWrap: document.getElementById('custom-wrap'),
     devices: document.getElementById('gen-devices'),
     note: document.getElementById('gen-note'),
+    autobind: document.getElementById('gen-autobind'),
     gen: document.getElementById('btn-gen'),
     exp: document.getElementById('btn-export'),
     lock: document.getElementById('btn-lock'),
@@ -40,6 +41,7 @@
     presets: document.getElementById('presets'),
     forgedBox: document.getElementById('forged-box'),
     forgedList: document.getElementById('forged-list'),
+    forgedTitle: document.getElementById('forged-title'),
     bindHint: document.getElementById('bind-hint'),
   };
 
@@ -401,6 +403,7 @@
       planId,
       quantity: Math.min(50, Math.max(1, Number(el.count.value) || 1)),
       deviceLimit: Math.min(50, Math.max(1, Number(el.devices.value) || 1)),
+      autoBindHwid: el.autobind?.value !== '0',
     };
     const days = resolveDays();
     if (days !== undefined) body.durationDays = days;
@@ -414,23 +417,26 @@
         method: 'POST',
         body: JSON.stringify(body),
       });
-      const keys = (data.keys || []).filter(Boolean);
+      const created = data?.data?.created ?? data?.created ?? 0;
+      const failed = data?.data?.failed ?? 0;
+      const keys = (data.keys || data?.data?.keys || []).filter(Boolean);
       lastForged = keys.map((key, i) => ({
         key,
-        expiresAt: data.licenses?.[i]?.expiresAt || null,
+        expiresAt: data.licenses?.[i]?.expiresAt || data?.data?.licenses?.[i]?.expiresAt || null,
         note,
         createdAt: Date.now(),
       }));
       sessionStorage.setItem(FORGED_KEY, JSON.stringify(lastForged));
       renderForged();
+      if (el.forgedTitle) {
+        el.forgedTitle.textContent = `Successfully generated: ${created || keys.length} · Failed: ${failed}`;
+      }
       await loadLicenses();
       flash(keys.length === 1
-        ? 'Mode key ready — paste into Loader'
-        : `${keys.length} mode keys ready for Loader`);
-      if (el.bindHint) {
-        el.bindHint.textContent = keys.length
-          ? `Latest mode key: ${keys[0]} — open Loader → Auth with this key (API must be the same host).`
-          : el.bindHint.textContent;
+        ? 'Key ready — paste into Loader'
+        : `${keys.length} keys ready for Loader`);
+      if (el.bindHint && keys.length) {
+        el.bindHint.textContent = `Latest key: ${keys[0]} — Loader Auth (same API host). Prefer start-admin.bat for local forge.`;
       }
     } catch (e) {
       flash(e.message, true);
