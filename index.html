@@ -8,6 +8,7 @@
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' http://127.0.0.1:* http://localhost:* https:; object-src 'none'">
 <link rel="stylesheet" href="styles.css">
+<script src="config.js"></script>
 </head>
 <body>
   <div class="bg" aria-hidden="true"></div>
@@ -28,12 +29,8 @@
         <div><span>CHALLENGE</span><code id="g-nonce">—</code></div>
         <div><span>NODE</span><code id="g-fp">—</code></div>
         <div><span>LOCK</span><code id="g-lock">0 / 5</code></div>
-        <div><span>API</span><code id="g-api-state">OFFLINE</code></div>
+        <div><span>CHANNEL</span><code id="g-api-state">SEALED</code></div>
       </div>
-      <label class="field">
-        <span>API endpoint</span>
-        <input id="g-api" type="url" placeholder="http://127.0.0.1:3000 or https://your-tunnel" autocomplete="off">
-      </label>
       <label class="field">
         <span>USR</span>
         <input id="g-user" type="text" autocomplete="username" autofocus placeholder="operator">
@@ -48,7 +45,7 @@
       </div>
       <button type="button" class="btn primary wide" id="g-go">AUTHENTICATE</button>
       <p class="err" id="g-err"></p>
-      <p class="foot">Keys are minted on the live API so the Loader accepts them. Soft lock after 5 fails.</p>
+      <p class="foot">API channel is sealed (Loader-matched). Soft lock after 5 fails.</p>
     </div>
   </div>
 
@@ -72,7 +69,7 @@
     <main class="wrap">
       <section class="panel banner">
         <h1>IMMORTAL KEY MANAGER</h1>
-        <p class="hint" id="bind-hint">Server-backed licenses only. Keys are hashed in the database and accepted by Immortal Loader. For local forge without tunnel use start-admin.bat → http://127.0.0.1:8080</p>
+        <p class="hint" id="bind-hint">Server-backed licenses · sealed API channel (same as Loader). Paste forged keys into Immortal Loader → Auth.</p>
       </section>
 
       <section class="panel gen">

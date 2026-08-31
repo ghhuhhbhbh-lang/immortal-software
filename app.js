@@ -1,13 +1,11 @@
 (() => {
   const FAIL_KEY = 'immortal.km.fails';
-  const API_KEY = 'immortal.km.api';
   const TOKEN_KEY = 'immortal.km.token';
   const FORGED_KEY = 'immortal.km.forged';
 
   const el = {
     gate: document.getElementById('gate'),
     app: document.getElementById('app'),
-    gApi: document.getElementById('g-api'),
     gUser: document.getElementById('g-user'),
     gPass: document.getElementById('g-pass'),
     gGo: document.getElementById('g-go'),
@@ -45,17 +43,12 @@
     bindHint: document.getElementById('bind-hint'),
   };
 
-  let API = '';
+  // Sealed — matches Loader; never shown or editable in UI
+  const API = String(window.IMMORTAL_API || '').replace(/\/$/, '');
   let accessToken = '';
   let products = [];
   let licenses = [];
   let lastForged = [];
-
-  function defaultApi() {
-    const host = location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') return 'http://127.0.0.1:3000';
-    return localStorage.getItem(API_KEY) || '';
-  }
 
   function hexNoise(n) {
     const a = new Uint8Array(n);
@@ -80,7 +73,7 @@
   async function theater() {
     el.gProg.hidden = false;
     const stages = [
-      [16, 'Probing API channel…'],
+      [16, 'Probing sealed channel…'],
       [34, 'Binding node fingerprint…'],
       [55, 'Challenge / nonce verify…'],
       [74, 'Argon2 clearance…'],
@@ -92,14 +85,6 @@
       el.gStep.textContent = label;
       await sleep(160 + Math.random() * 140);
     }
-  }
-
-  function normalizeApi(raw) {
-    let v = String(raw || '').trim().replace(/\/$/, '');
-    if (!v) throw new Error('API endpoint required');
-    const u = new URL(v);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('API must be http(s)');
-    return v;
   }
 
   async function apiFetch(path, opts = {}) {
@@ -124,17 +109,23 @@
     return data;
   }
 
-  async function pingApi(base) {
+  async function pingApi() {
     try {
-      const r = await fetch(base.replace(/\/$/, '') + '/health', { signal: AbortSignal.timeout(4000) });
+      const r = await fetch(API + '/health', { signal: AbortSignal.timeout(4000) });
       const data = await r.json().catch(() => ({}));
       const ok = r.ok && data.status !== 'degraded';
-      el.gApiState.textContent = ok ? 'ONLINE' : 'DEGRADED';
-      el.gApiState.style.color = ok ? '#5dcea0' : '#eab308';
+      if (el.gApiState) {
+        el.gApiState.textContent = ok ? 'ONLINE' : 'DEGRADED';
+        el.gApiState.style.color = ok ? '#5dcea0' : '#eab308';
+      }
+      if (el.apiChip) el.apiChip.textContent = ok ? 'CHANNEL SEALED · OK' : 'CHANNEL SEALED · ?';
       return { ok, data };
     } catch {
-      el.gApiState.textContent = 'OFFLINE';
-      el.gApiState.style.color = '#e8617f';
+      if (el.gApiState) {
+        el.gApiState.textContent = 'OFFLINE';
+        el.gApiState.style.color = '#e8617f';
+      }
+      if (el.apiChip) el.apiChip.textContent = 'CHANNEL SEALED · DOWN';
       return { ok: false };
     }
   }
@@ -149,13 +140,13 @@
     el.gPass.value = '';
     if (msg) el.gErr.textContent = msg;
     refreshMeta();
-    pingApi(el.gApi.value || defaultApi());
+    pingApi();
   }
 
   async function openApp() {
     el.gate.hidden = true;
     el.app.hidden = false;
-    el.apiChip.textContent = API.replace(/^https?:\/\//, '');
+    if (el.apiChip) el.apiChip.textContent = 'CHANNEL SEALED · OK';
     try {
       await loadProducts();
       await loadLicenses();
@@ -178,11 +169,8 @@
       el.gErr.textContent = 'Enter USR / PASS';
       return;
     }
-    try {
-      API = normalizeApi(el.gApi.value || defaultApi());
-      el.gApi.value = API;
-    } catch (e) {
-      el.gErr.textContent = e.message;
+    if (!API) {
+      el.gErr.textContent = 'Sealed channel misconfigured';
       return;
     }
 
@@ -190,12 +178,10 @@
     el.gGo.textContent = 'SEALING…';
     await theater();
 
-    const health = await pingApi(API);
+    const health = await pingApi();
     if (!health.ok) {
       el.gProg.hidden = true;
-      el.gErr.textContent = location.protocol === 'https:' && API.includes('127.0.0.1')
-        ? 'GitHub Pages cannot reach localhost. Run start-admin.bat OR paste a public API/tunnel URL.'
-        : 'API offline — start backend on :3000';
+      el.gErr.textContent = 'Auth channel offline — start Immortal API (same as Loader)';
       el.gGo.disabled = false;
       el.gGo.textContent = 'AUTHENTICATE';
       return;
@@ -224,7 +210,6 @@
       });
 
       sessionStorage.setItem(FAIL_KEY, '0');
-      localStorage.setItem(API_KEY, API);
       accessToken = data.accessToken;
       sessionStorage.setItem(TOKEN_KEY, accessToken);
       el.gGo.disabled = false;
@@ -357,14 +342,12 @@
       </div>`).join('');
   }
 
-  el.gApi.value = defaultApi();
   refreshMeta();
   setInterval(refreshMeta, 14000);
-  pingApi(el.gApi.value || defaultApi());
-  el.gApi.addEventListener('change', () => pingApi(el.gApi.value || defaultApi()));
+  pingApi();
 
   el.gGo.addEventListener('click', tryGate);
-  [el.gUser, el.gPass, el.gApi].forEach((inp) => {
+  [el.gUser, el.gPass].forEach((inp) => {
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryGate(); });
   });
   el.lock.addEventListener('click', () => showGate(''));
@@ -497,14 +480,13 @@
   });
 
   // Restore sealed session if token still valid
-  const savedApi = localStorage.getItem(API_KEY) || defaultApi();
   const savedTok = sessionStorage.getItem(TOKEN_KEY);
-  if (savedApi) el.gApi.value = savedApi;
-  if (savedTok && savedApi) {
-    API = savedApi;
+  if (savedTok && API) {
     accessToken = savedTok;
     apiFetch('/api/auth/me')
       .then(() => openApp())
       .catch(() => showGate(''));
+  } else {
+    pingApi();
   }
 })();
